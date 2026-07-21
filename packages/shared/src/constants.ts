@@ -9,6 +9,10 @@ export const DEFAULT_PAGE_SIZE = 20;
 
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
+export const DEFAULT_MAX_TOKENS: Record<string, number> = {
+  'resume-parser': 2048,
+};
+
 export const DEFAULT_MODELS: Record<string, string> = {
   'resume-parser': 'openai/gpt-4.1-mini',
   'cover-letter': 'anthropic/claude-3.5-sonnet',

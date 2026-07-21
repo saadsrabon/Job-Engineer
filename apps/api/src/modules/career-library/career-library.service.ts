@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { CareerLibraryRepository } from './career-library.repository';
 
 @Injectable()
 export class CareerLibraryService {
-  constructor(private repository: CareerLibraryRepository) {}
+  constructor(@Inject(CareerLibraryRepository) private repository: CareerLibraryRepository) {}
 
   getAll(userId: string) {
     return this.repository.getAll(userId);

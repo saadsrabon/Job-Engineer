@@ -6,8 +6,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const rootEnvPath = resolve(root, '.env');
 
 if (!existsSync(rootEnvPath)) {
-  console.error('Missing root .env — copy .env.example to .env and fill in Clerk keys first.');
-  process.exit(1);
+  const examplePath = resolve(root, '.env.example');
+  if (existsSync(examplePath)) {
+    writeFileSync(rootEnvPath, readFileSync(examplePath, 'utf8'));
+    console.log('Created root .env from .env.example — fill in Clerk keys when ready.');
+  } else {
+    console.error('Missing root .env — copy .env.example to .env and fill in Clerk keys first.');
+    process.exit(1);
+  }
 }
 
 const env = readFileSync(rootEnvPath, 'utf8');
@@ -53,4 +59,12 @@ const landingEnv = [
 writeFileSync(resolve(root, 'apps/web/.env.local'), webEnv);
 writeFileSync(resolve(root, 'apps/landing/.env.local'), landingEnv);
 
-console.log('Synced apps/web/.env.local and apps/landing/.env.local from root .env');
+const databaseUrl = get('DATABASE_URL') || 'postgresql://jobos:jobos@localhost:5432/jobos';
+const databaseEnv = [
+  '# Auto-generated from root .env — run: pnpm env:setup',
+  `DATABASE_URL=${databaseUrl}`,
+  '',
+].join('\n');
+writeFileSync(resolve(root, 'packages/database/.env'), databaseEnv);
+
+console.log('Synced apps/web/.env.local, apps/landing/.env.local, and packages/database/.env from root .env');

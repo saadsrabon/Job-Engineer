@@ -16,3 +16,4 @@ if (process.env.NODE_ENV !== 'production') {
 
 export * from '@prisma/client';
 export { prisma as db };
+export { importParsedCareerData } from './import-career-data';

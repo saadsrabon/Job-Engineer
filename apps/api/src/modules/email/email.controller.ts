@@ -1,12 +1,25 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Inject } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { EmailService } from './email.service';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '@jobos/database';
+import { GenerateEmailDto } from './dto/generate-email.dto';
 
 @ApiTags('email')
 @ApiBearerAuth()
+@UseGuards(ClerkAuthGuard)
 @Controller('email')
 export class EmailModuleController {
-  @Get()
-  stub() {
-    return { data: { message: 'Email module — Phase 2' } };
+  constructor(@Inject(EmailService) private service: EmailService) {}
+
+  @Get('templates')
+  listTemplates() {
+    return { data: this.service.listTemplates() };
+  }
+
+  @Post('generate')
+  generate(@CurrentUser() user: User, @Body() dto: GenerateEmailDto) {
+    return this.service.generate(user.id, dto.jobId, dto.templateId).then((data) => ({ data }));
   }
 }

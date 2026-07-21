@@ -7,6 +7,11 @@ import {
   Briefcase,
   FileText,
   Library,
+  MessageSquare,
+  Mail,
+  BarChart3,
+  Bell,
+  Shield,
   PanelLeftClose,
   PanelLeft,
 } from 'lucide-react';
@@ -19,6 +24,11 @@ const navItems = [
   { href: '/dashboard/career', label: 'Career Library', icon: Library },
   { href: '/dashboard/resumes', label: 'Resumes', icon: FileText },
   { href: '/dashboard/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/dashboard/interviews', label: 'Interviews', icon: MessageSquare },
+  { href: '/dashboard/email', label: 'Email', icon: Mail },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard/reminders', label: 'Reminders', icon: Bell },
+  { href: '/dashboard/admin', label: 'Admin', icon: Shield },
 ];
 
 export function Sidebar() {

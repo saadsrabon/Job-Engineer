@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" rx="16" fill="#0a0f0d"/>
+  <rect x="520" y="80" width="260" height="340" rx="12" fill="#111816" stroke="#34d399" stroke-opacity="0.4"/>
+  <rect x="540" y="100" width="80" height="10" rx="5" fill="#34d399"/>
+  <text x="540" y="130" fill="#f3f4f6" font-family="system-ui,sans-serif" font-size="14" font-weight="600">JobOS</text>
+  <rect x="540" y="150" width="220" height="72" rx="8" fill="#0f1714" stroke="#374151"/>
+  <text x="556" y="176" fill="#d1d5db" font-family="system-ui,sans-serif" font-size="11">Senior Backend Engineer</text>
+  <text x="556" y="196" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="10">Acme Corp · Remote</text>
+  <rect x="556" y="206" width="100" height="8" rx="4" fill="#374151"/>
+  <rect x="540" y="240" width="220" height="36" rx="18" fill="#34d399"/>
+  <text x="582" y="263" fill="#052e1f" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Save to JobOS</text>
+  <rect x="48" y="120" width="440" height="280" rx="12" fill="#0f1714" stroke="#1f2937"/>
+  <rect x="72" y="144" width="200" height="14" rx="7" fill="#374151"/>
+  <rect x="72" y="180" width="360" height="10" rx="5" fill="#4b5563"/>
+  <rect x="72" y="204" width="320" height="10" rx="5" fill="#374151"/>
+  <rect x="72" y="240" width="120" height="24" rx="12" fill="#34d399" opacity="0.2"/>
+  <text x="88" y="257" fill="#34d399" font-family="system-ui,sans-serif" font-size="11">Apply now</text>
+  <text x="48" y="80" fill="#f3f4f6" font-family="system-ui,sans-serif" font-size="22" font-weight="600">Capture any job posting in one click.</text>
+</svg>

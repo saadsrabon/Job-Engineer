@@ -41,7 +41,7 @@ export class CrmRepository {
 
 @Injectable()
 export class CrmService {
-  constructor(private repository: CrmRepository) {}
+  constructor(@Inject(CrmRepository) private repository: CrmRepository) {}
 
   private async assertJobAccess(userId: string, jobId: string) {
     const job = await this.repository.findJobForUser(userId, jobId);

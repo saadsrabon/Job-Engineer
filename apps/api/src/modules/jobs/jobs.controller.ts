@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Inject,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JobsService } from './jobs.service';
@@ -21,7 +22,7 @@ import { UpdateJobStageDto } from './dto/update-job-stage.dto';
 @UseGuards(ClerkAuthGuard)
 @Controller('jobs')
 export class JobsController {
-  constructor(private service: JobsService) {}
+  constructor(@Inject(JobsService) private service: JobsService) {}
 
   @Get()
   findAll(@CurrentUser() user: User) {

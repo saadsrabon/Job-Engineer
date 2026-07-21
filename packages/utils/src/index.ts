@@ -32,3 +32,6 @@ export function parseJsonSafe<T>(json: string, fallback: T): T {
     return fallback;
   }
 }
+
+export { COMPANY_ALIASES, normalizeCompanyName, resolveCompanySlug } from './company-match';
+export { formatResumeTextToMarkdown, truncateResumeMarkdown } from './resume-markdown';

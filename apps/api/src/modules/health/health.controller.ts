@@ -13,8 +13,8 @@ import { PrismaClient } from '@jobos/database';
 @Controller('health')
 export class HealthController {
   constructor(
-    private health: HealthCheckService,
-    private prismaHealth: PrismaHealthIndicator,
+    @Inject(HealthCheckService) private health: HealthCheckService,
+    @Inject(PrismaHealthIndicator) private prismaHealth: PrismaHealthIndicator,
     @Inject(PRISMA) private prisma: PrismaClient,
   ) {}
 

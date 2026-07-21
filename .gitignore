@@ -36,6 +36,7 @@ packages/database/prisma/migrations/**/migration_lock.toml
 
 # Uploads
 uploads/
+exports/
 
 # Extension
 apps/browser-extension/dist

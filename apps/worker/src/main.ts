@@ -1,12 +1,10 @@
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-config({ path: resolve(__dirname, '../../../.env') });
-config({ path: resolve(__dirname, '../../../.env.local') });
+import './load-env';
 
 import { Worker } from 'bullmq';
-import { prisma, ParseJobStatus } from '@jobos/database';
+import { prisma, ParseJobStatus, importParsedCareerData } from '@jobos/database';
 import { QUEUE_NAMES, OpenRouterClient } from '@jobos/shared';
+import { resolveUploadFilePath } from '@jobos/shared/paths';
+import { formatResumeTextToMarkdown } from '@jobos/utils';
 import {
   RESUME_PARSER_SYSTEM_PROMPT,
   buildResumeParserUserPrompt,
@@ -28,94 +26,65 @@ async function parseResume(jobId: string, userId: string, filePath: string) {
   });
 
   try {
-    const buffer = fs.readFileSync(filePath);
+    const resolvedPath = resolveUploadFilePath(filePath);
+    const buffer = fs.readFileSync(resolvedPath);
     const pdf = await pdfParse(buffer);
-    const extractedText = pdf.text;
+    const resumeMarkdown = formatResumeTextToMarkdown(pdf.text);
 
-    let extractedData: Record<string, unknown[]> | null = null;
-
-    if (process.env.OPENROUTER_API_KEY) {
-      const client = new OpenRouterClient({
-        apiKey: process.env.OPENROUTER_API_KEY,
-        agent: 'resume-parser',
-      });
-
-      extractedData = await client.extractJson<Record<string, unknown[]>>([
-        { role: 'system', content: RESUME_PARSER_SYSTEM_PROMPT },
-        { role: 'user', content: buildResumeParserUserPrompt(extractedText) },
-      ]);
+    if (!resumeMarkdown.trim()) {
+      throw new Error(
+        'Could not extract readable text from PDF. Try a text-based PDF or re-export without image-only pages.',
+      );
     }
 
-    if (extractedData) {
-      await prisma.$transaction(async (tx) => {
-        if (extractedData!.experiences?.length) {
-          await tx.experience.deleteMany({ where: { userId } });
-          await Promise.all(
-            extractedData!.experiences!.map((item, i) =>
-              tx.experience.create({
-                data: { ...(item as object), userId, order: i } as never,
-              }),
-            ),
-          );
-        }
-
-        if (extractedData!.skills?.length) {
-          await tx.skill.deleteMany({ where: { userId } });
-          await Promise.all(
-            extractedData!.skills!.map((item, i) =>
-              tx.skill.create({
-                data: { ...(item as object), userId, order: i } as never,
-              }),
-            ),
-          );
-        }
-
-        if (extractedData!.projects?.length) {
-          await tx.project.deleteMany({ where: { userId } });
-          await Promise.all(
-            extractedData!.projects!.map((item, i) =>
-              tx.project.create({
-                data: { ...(item as object), userId, order: i } as never,
-              }),
-            ),
-          );
-        }
-
-        if (extractedData!.education?.length) {
-          await tx.education.deleteMany({ where: { userId } });
-          await Promise.all(
-            extractedData!.education!.map((item, i) =>
-              tx.education.create({
-                data: { ...(item as object), userId, order: i } as never,
-              }),
-            ),
-          );
-        }
-
-        await tx.activityLog.create({
-          data: {
-            userId,
-            type: 'resume.parsed',
-            entityId: jobId,
-            message: 'Resume parsed and imported to Career Library',
-          },
-        });
-      });
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error(
+        'OPENROUTER_API_KEY is not set. Add it to .env to enable resume parsing.',
+      );
     }
+
+    const client = new OpenRouterClient({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      agent: 'resume-parser',
+      model: process.env.OPENROUTER_RESUME_PARSER_MODEL,
+    });
+
+    const extractedData = await client.extractJson<Record<string, unknown[]>>([
+      { role: 'system', content: RESUME_PARSER_SYSTEM_PROMPT },
+      { role: 'user', content: buildResumeParserUserPrompt(resumeMarkdown) },
+    ]);
+
+    await prisma.$transaction(async (tx) => {
+      await importParsedCareerData(tx, userId, extractedData);
+
+      await tx.activityLog.create({
+        data: {
+          userId,
+          type: 'resume.parsed',
+          entityId: jobId,
+          message: 'Resume parsed and imported to Career Library',
+        },
+      });
+    });
 
     await prisma.resumeParseJob.update({
       where: { id: jobId },
       data: {
         status: ParseJobStatus.Completed,
-        extractedText,
-        extractedData: (extractedData ?? undefined) as never,
+        extractedText: resumeMarkdown,
+        extractedData: extractedData as never,
         completedAt: new Date(),
       },
     });
 
     console.log(`Resume parse job ${jobId} completed`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    let message = error instanceof Error ? error.message : 'Unknown error';
+    if (message.includes('402') || message.includes('credits insufficient')) {
+      message =
+        `Local PDF extraction succeeded, but AI structuring failed: ${message} ` +
+        'Add OpenRouter credits and re-upload your resume, or set OPENROUTER_RESUME_PARSER_MODEL to a cheaper model.';
+    }
     await prisma.resumeParseJob.update({
       where: { id: jobId },
       data: { status: ParseJobStatus.Failed, error: message },
@@ -142,6 +111,11 @@ worker.on('completed', (job) => console.log(`Job ${job.id} completed`));
 worker.on('failed', (job, err) => console.error(`Job ${job?.id} failed:`, err));
 
 console.log('JobOS Worker started — listening for resume parse jobs');
+if (!process.env.OPENROUTER_API_KEY) {
+  console.warn(
+    'OPENROUTER_API_KEY is not set. Add it to root .env and restart the worker.',
+  );
+}
 
 process.on('SIGTERM', async () => {
   await worker.close();

@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { JobsRepository } from './jobs.repository';
 import { PipelineStage } from '@jobos/database';
 
 @Injectable()
 export class JobsService {
-  constructor(private repository: JobsRepository) {}
+  constructor(@Inject(JobsRepository) private repository: JobsRepository) {}
 
   findAll(userId: string) {
     return this.repository.findAll(userId);

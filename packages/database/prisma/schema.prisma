@@ -255,6 +255,7 @@ model Job {
   reminders   JobReminder[]
   attachments JobAttachment[]
   stageHistory JobStageHistory[]
+  interviewRounds InterviewRound[]
 
   @@index([userId])
   @@index([stage])
@@ -365,4 +366,104 @@ model ActivityLog {
   @@index([userId])
   @@index([createdAt])
   @@map("activity_logs")
+}
+
+model InterviewCompany {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  website   String?
+  stages    String?
+  topics    String[] @default([])
+  techStack String[] @default([])
+  sourceUrl String?
+  syncedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions InterviewQuestion[]
+
+  @@map("interview_companies")
+}
+
+model InterviewQuestion {
+  id          String   @id @default(cuid())
+  companyId   String?
+  question    String
+  answer      String?
+  topics      String[] @default([])
+  externalUrl String?
+  verified    Boolean  @default(false)
+  order       Int      @default(0)
+  sourceFile  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company  InterviewCompany?      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  progress UserQuestionProgress[]
+
+  @@index([companyId])
+  @@map("interview_questions")
+}
+
+model UserQuestionProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  questionId  String
+  practiced   Boolean   @default(false)
+  practicedAt DateTime?
+  confidence  Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  question InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@map("user_question_progress")
+}
+
+model AiGeneration {
+  id        String   @id @default(cuid())
+  userId    String
+  agent     String
+  input     Json
+  output    Json
+  jobId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([agent])
+  @@map("ai_generations")
+}
+
+model InterviewRound {
+  id          String    @id @default(cuid())
+  userId      String
+  jobId       String
+  title       String
+  scheduledAt DateTime?
+  location    String?
+  prepNotes   String?
+  feedback    String?
+  status      String    @default("scheduled")
+  questionIds String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([jobId])
+  @@map("interview_rounds")
+}
+
+model InterviewSyncMeta {
+  id        String   @id @default("default")
+  commitSha String?
+  syncedAt  DateTime @default(now())
+  source    String?
+  updatedAt DateTime @updatedAt
+
+  @@map("interview_sync_meta")
 }

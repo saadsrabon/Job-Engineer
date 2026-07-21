@@ -7,9 +7,13 @@ import {
   UseInterceptors,
   UploadedFile,
   HttpCode,
+  StreamableFile,
+  Header,
+  Inject,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags, ApiConsumes } from '@nestjs/swagger';
+import { createReadStream } from 'fs';
 import { ResumeService } from './resume.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -20,7 +24,7 @@ import { User } from '@jobos/database';
 @UseGuards(ClerkAuthGuard)
 @Controller('resume')
 export class ResumeController {
-  constructor(private service: ResumeService) {}
+  constructor(@Inject(ResumeService) private service: ResumeService) {}
 
   @Post('upload')
   @HttpCode(202)
@@ -47,6 +51,15 @@ export class ResumeController {
 
   @Post('export')
   exportPdf(@CurrentUser() user: User) {
-    return { data: this.service.exportPdf(user.id) };
+    return this.service.exportPdf(user.id).then((data) => ({ data }));
+  }
+
+  @Get('export/download/:fileName')
+  @Header('Content-Type', 'application/pdf')
+  downloadExport(@CurrentUser() user: User, @Param('fileName') fileName: string) {
+    const { filePath, fileName: safeName } = this.service.getExportFile(user.id, fileName);
+    return new StreamableFile(createReadStream(filePath), {
+      disposition: `attachment; filename="${safeName}"`,
+    });
   }
 }

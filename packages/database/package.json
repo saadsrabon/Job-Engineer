@@ -9,10 +9,10 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
+    "db:push": "tsx prisma/with-env.ts db push",
+    "db:migrate": "tsx prisma/with-env.ts migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "tsx prisma/with-env.ts studio"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2"
@@ -21,6 +21,7 @@
     "@jobos/config": "workspace:*",
     "@jobos/types": "workspace:*",
     "@types/node": "^22.15.21",
+    "dotenv": "^16.5.0",
     "prisma": "^6.8.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"

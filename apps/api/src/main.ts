@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import './load-env';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -46,4 +48,7 @@ async function bootstrap() {
   console.log(`Swagger docs at http://localhost:${port}/api/docs`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start JobOS API:', err);
+  process.exit(1);
+});

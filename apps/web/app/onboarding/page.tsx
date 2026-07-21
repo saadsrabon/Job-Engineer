@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useApiClient } from '@/lib/api';
@@ -11,6 +11,7 @@ export default function OnboardingPage() {
   const api = useApiClient();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
@@ -24,10 +25,14 @@ export default function OnboardingPage() {
   }, [user, router]);
 
   const complete = useMutation({
-    mutationFn: () => api.patch('/users/me/onboarding'),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      router.push('/dashboard/resumes');
+    mutationFn: () => api.patch<UserProfile>('/users/me/onboarding'),
+    onSuccess: (updatedUser) => {
+      setErrorMessage(null);
+      queryClient.setQueryData(['user'], updatedUser);
+      router.replace('/dashboard/resumes');
+    },
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : 'Could not complete onboarding.');
     },
   });
 
@@ -50,7 +55,18 @@ export default function OnboardingPage() {
             Your career operating system. Start by uploading your resume — we&apos;ll build your
             Career Library automatically.
           </p>
-          <Button onClick={() => complete.mutate()} disabled={complete.isPending} className="w-full">
+          {errorMessage ? (
+            <p className="text-sm text-destructive">{errorMessage}</p>
+          ) : null}
+          <Button
+            type="button"
+            onClick={() => {
+              setErrorMessage(null);
+              complete.mutate();
+            }}
+            disabled={complete.isPending}
+            className="w-full"
+          >
             {complete.isPending ? 'Setting up...' : 'Get Started'}
           </Button>
         </CardContent>

@@ -1,9 +1,14 @@
+import './load-env';
 import { PrismaClient, PipelineStage } from '@prisma/client';
+import { seedInterviews } from './seed-interviews';
 
 const DEFAULT_MODELS: Record<string, string> = {
   'resume-parser': 'openai/gpt-4.1-mini',
   'cover-letter': 'anthropic/claude-3.5-sonnet',
   'job-analyzer': 'openai/gpt-4.1-mini',
+  'ats-scorer': 'openai/gpt-4.1-mini',
+  'interview-coach': 'anthropic/claude-3.5-sonnet',
+  'email-writer': 'openai/gpt-4.1-mini',
 };
 
 const prisma = new PrismaClient();
@@ -69,6 +74,8 @@ async function main() {
   });
 
   console.log('Demo data seeded.');
+
+  await seedInterviews(prisma);
 }
 
 main()

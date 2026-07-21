@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UseGuards, Inject } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CrmService } from './crm.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -12,7 +12,7 @@ import { CreateTagDto } from './dto/create-tag.dto';
 @UseGuards(ClerkAuthGuard)
 @Controller('crm')
 export class CrmController {
-  constructor(private service: CrmService) {}
+  constructor(@Inject(CrmService) private service: CrmService) {}
 
   @Post('jobs/:jobId/notes')
   createNote(

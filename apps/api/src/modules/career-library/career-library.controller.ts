@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Inject,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CareerLibraryService } from './career-library.service';
@@ -29,7 +30,7 @@ import {
 @UseGuards(ClerkAuthGuard)
 @Controller('career')
 export class CareerLibraryController {
-  constructor(private service: CareerLibraryService) {}
+  constructor(@Inject(CareerLibraryService) private service: CareerLibraryService) {}
 
   @Get()
   getAll(@CurrentUser() user: User) {

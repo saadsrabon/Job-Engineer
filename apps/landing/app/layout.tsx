@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Inter } from 'next/font/google';
 import '@jobos/ui/globals.css';
+import 'lenis/dist/lenis.css';
+import './landing.css';
 
 const inter = Inter({ subsets: ['latin'] });
 

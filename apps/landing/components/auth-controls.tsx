@@ -2,6 +2,7 @@
 
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { Button } from '@jobos/ui';
+import { LandingCtaButton } from '@/components/landing-cta-button';
 
 export function AuthControls() {
   return (
@@ -13,7 +14,9 @@ export function AuthControls() {
           </Button>
         </SignInButton>
         <SignUpButton mode="modal">
-          <Button size="sm">Get Started</Button>
+          <LandingCtaButton size="sm" className="px-5">
+            Get Started
+          </LandingCtaButton>
         </SignUpButton>
       </SignedOut>
       <SignedIn>

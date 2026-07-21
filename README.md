@@ -73,3 +73,9 @@ For production, use managed Postgres (Neon, RDS, etc.) and Redis (Upstash, Elast
 - `@jobos/utils` — Pure helpers
 - `@jobos/prompts` — AI prompts
 - `@jobos/email` — Email templates
+
+## Roadmap
+
+See [ROADMAP.md](./ROADMAP.md) for the full product plan.
+
+Phase 2 includes **Top Company Interview Questions** sourced from [Interview BD](https://github.com/saadsrabon/interview-questions-bangladesh) — 25+ Bangladeshi tech companies, 425+ questions with verified solutions.

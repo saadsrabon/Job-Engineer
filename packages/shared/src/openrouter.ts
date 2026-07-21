@@ -1,4 +1,8 @@
-import { DEFAULT_MODELS, OPENROUTER_BASE_URL } from './constants';
+import {
+  DEFAULT_MAX_TOKENS,
+  DEFAULT_MODELS,
+  OPENROUTER_BASE_URL,
+} from './constants';
 
 export interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant';
@@ -22,6 +26,11 @@ export class OpenRouterClient {
       (this.options.agent ? DEFAULT_MODELS[this.options.agent] : undefined) ||
       'openai/gpt-4.1-mini';
 
+    const maxTokens =
+      this.options.maxTokens ??
+      (this.options.agent ? DEFAULT_MAX_TOKENS[this.options.agent] : undefined) ??
+      4096;
+
     const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -34,13 +43,13 @@ export class OpenRouterClient {
         model,
         messages,
         temperature: this.options.temperature ?? 0.1,
-        max_tokens: this.options.maxTokens ?? 4096,
+        max_tokens: maxTokens,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`OpenRouter error: ${error}`);
+      throw new Error(formatOpenRouterError(response.status, error, maxTokens));
     }
 
     const data = (await response.json()) as {
@@ -58,4 +67,30 @@ export class OpenRouterClient {
     }
     return JSON.parse(jsonMatch[0]) as T;
   }
+}
+
+function formatOpenRouterError(
+  status: number,
+  body: string,
+  maxTokens: number,
+): string {
+  let detail = body;
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { message?: string; code?: number };
+    };
+    detail = parsed.error?.message ?? body;
+  } catch {
+    // keep raw body
+  }
+
+  if (status === 402) {
+    return (
+      `OpenRouter credits insufficient (402): ${detail}. ` +
+      `Try adding credits at https://openrouter.ai/settings/credits, ` +
+      `or use a cheaper model / lower max_tokens (currently ${maxTokens}).`
+    );
+  }
+
+  return `OpenRouter error (${status}): ${detail}`;
 }

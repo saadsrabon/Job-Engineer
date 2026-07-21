@@ -12,6 +12,6 @@ Return ONLY valid JSON matching this schema:
 }
 Use empty arrays for missing sections. Dates in YYYY-MM format when possible.`;
 
-export function buildResumeParserUserPrompt(resumeText: string): string {
-  return `Parse the following resume and extract all career data:\n\n${resumeText}`;
+export function buildResumeParserUserPrompt(resumeMarkdown: string): string {
+  return `Parse the following resume (markdown format) and extract all career data:\n\n${resumeMarkdown}`;
 }

@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '@/lib/api';
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } from '@jobos/ui';
-import { Upload, FileText, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, Loader2, Download } from 'lucide-react';
 
 interface ParseJob {
   id: string;
@@ -21,6 +21,17 @@ export default function ResumesPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const exportPdf = useMutation({
+    mutationFn: async () => {
+      const result = await api.post<{ fileName: string; downloadPath: string }>('/resume/export');
+      await api.download(result.downloadPath.replace('/api/v1', ''), result.fileName);
+      return result;
+    },
+    onError: (err) => setExportError(err instanceof Error ? err.message : 'Export failed'),
+    onSuccess: () => setExportError(null),
+  });
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -75,12 +86,24 @@ export default function ResumesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Resumes</h1>
-        <p className="text-muted-foreground">
-          Upload your resume to populate your Career Library automatically.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Resumes</h1>
+          <p className="text-muted-foreground">
+            Upload your resume to populate your Career Library automatically.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          disabled={exportPdf.isPending}
+          onClick={() => exportPdf.mutate()}
+        >
+          <Download className="h-4 w-4" />
+          {exportPdf.isPending ? 'Exporting...' : 'Export PDF'}
+        </Button>
       </div>
+      {exportError && <p className="text-sm text-destructive">{exportError}</p>}
 
       <Card>
         <CardHeader>

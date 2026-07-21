@@ -88,4 +88,21 @@ export class ApiClient {
     const json = (await response.json()) as ApiResponse<T>;
     return json.data;
   }
+
+  async download(path: string, fileName: string): Promise<void> {
+    const token = await this.options.getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${this.options.baseUrl}/api/v1${path}`, { headers });
+    if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }

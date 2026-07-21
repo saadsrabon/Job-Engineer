@@ -34,10 +34,27 @@ export default function DocsPage() {
 
         <section>
           <h2 className="text-xl font-semibold">Phase Roadmap</h2>
+          <p className="mt-2 text-muted-foreground">
+            Full product plan: see{' '}
+            <Link href="https://github.com/saadsrabon/Job-Engineer/blob/main/ROADMAP.md" className="text-primary hover:underline">
+              ROADMAP.md
+            </Link>
+          </p>
           <ul className="mt-4 space-y-2 text-muted-foreground">
-            <li>Phase 1: Foundation — Career Library, Resume Parser, Job CRM</li>
-            <li>Phase 2: Intelligence — AI agents, ATS, cover letters, email</li>
-            <li>Phase 3: Automation — Browser extension, analytics, job discovery</li>
+            <li>Phase 1: Foundation — Career Library, Resume Parser, Job CRM ✅</li>
+            <li>
+              Phase 2: Intelligence — AI agents, ATS, cover letters, email,{' '}
+              <strong className="font-medium text-foreground">top company interview questions</strong>{' '}
+              (from{' '}
+              <Link
+                href="https://github.com/saadsrabon/interview-questions-bangladesh"
+                className="text-primary hover:underline"
+              >
+                Interview BD
+              </Link>
+              )
+            </li>
+            <li>Phase 3: Automation — Browser extension, analytics, interview workspace</li>
           </ul>
         </section>
       </nav>

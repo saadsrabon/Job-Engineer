@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Inject } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -11,7 +11,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 @UseGuards(ClerkAuthGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(@Inject(UsersService) private usersService: UsersService) {}
 
   @Get('me')
   getMe(@CurrentUser() user: User) {

@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Headers, RawBodyRequest, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Req, Headers, RawBodyRequest, BadRequestException, Inject } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { Webhook } from 'svix';
@@ -7,7 +7,7 @@ import { UsersRepository } from '../users/users.repository';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private usersRepository: UsersRepository) {}
+  constructor(@Inject(UsersRepository) private usersRepository: UsersRepository) {}
 
   @Post('webhook')
   async handleWebhook(
