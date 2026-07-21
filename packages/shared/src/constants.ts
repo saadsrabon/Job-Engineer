@@ -9,8 +9,11 @@ export const DEFAULT_PAGE_SIZE = 20;
 
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
+/** Low default so OpenRouter 402 checks pass on minimal credit balances. Override via OPENROUTER_RESUME_PARSER_MAX_TOKENS. */
+export const DEFAULT_RESUME_PARSER_MAX_TOKENS = 128;
+
 export const DEFAULT_MAX_TOKENS: Record<string, number> = {
-  'resume-parser': 2048,
+  'resume-parser': DEFAULT_RESUME_PARSER_MAX_TOKENS,
 };
 
 export const DEFAULT_MODELS: Record<string, string> = {

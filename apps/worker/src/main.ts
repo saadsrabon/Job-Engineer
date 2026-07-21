@@ -2,9 +2,13 @@ import './load-env';
 
 import { Worker } from 'bullmq';
 import { prisma, ParseJobStatus, importParsedCareerData } from '@jobos/database';
-import { QUEUE_NAMES, OpenRouterClient } from '@jobos/shared';
+import {
+  QUEUE_NAMES,
+  OpenRouterClient,
+  resolveResumeParserMaxTokens,
+} from '@jobos/shared';
 import { resolveUploadFilePath } from '@jobos/shared/paths';
-import { formatResumeTextToMarkdown } from '@jobos/utils';
+import { formatResumeTextToMarkdown, truncateResumeMarkdown } from '@jobos/utils';
 import {
   RESUME_PARSER_SYSTEM_PROMPT,
   buildResumeParserUserPrompt,
@@ -43,15 +47,25 @@ async function parseResume(jobId: string, userId: string, filePath: string) {
       );
     }
 
+    const maxTokens = resolveResumeParserMaxTokens(
+      process.env.OPENROUTER_RESUME_PARSER_MAX_TOKENS,
+    );
+
+    const resumeForParsing =
+      maxTokens <= 256
+        ? truncateResumeMarkdown(resumeMarkdown, 2000)
+        : resumeMarkdown;
+
     const client = new OpenRouterClient({
       apiKey: process.env.OPENROUTER_API_KEY,
       agent: 'resume-parser',
       model: process.env.OPENROUTER_RESUME_PARSER_MODEL,
+      maxTokens,
     });
 
     const extractedData = await client.extractJson<Record<string, unknown[]>>([
       { role: 'system', content: RESUME_PARSER_SYSTEM_PROMPT },
-      { role: 'user', content: buildResumeParserUserPrompt(resumeMarkdown) },
+      { role: 'user', content: buildResumeParserUserPrompt(resumeForParsing) },
     ]);
 
     await prisma.$transaction(async (tx) => {
@@ -83,7 +97,9 @@ async function parseResume(jobId: string, userId: string, filePath: string) {
     if (message.includes('402') || message.includes('credits insufficient')) {
       message =
         `Local PDF extraction succeeded, but AI structuring failed: ${message} ` +
-        'Add OpenRouter credits and re-upload your resume, or set OPENROUTER_RESUME_PARSER_MODEL to a cheaper model.';
+        'Add OpenRouter credits and re-upload your resume, set OPENROUTER_RESUME_PARSER_MODEL to a cheaper model, ' +
+        'or lower OPENROUTER_RESUME_PARSER_MAX_TOKENS (currently ' +
+        `${resolveResumeParserMaxTokens(process.env.OPENROUTER_RESUME_PARSER_MAX_TOKENS)}).`;
     }
     await prisma.resumeParseJob.update({
       where: { id: jobId },

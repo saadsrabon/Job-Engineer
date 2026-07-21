@@ -1,8 +1,17 @@
 import {
   DEFAULT_MAX_TOKENS,
   DEFAULT_MODELS,
+  DEFAULT_RESUME_PARSER_MAX_TOKENS,
   OPENROUTER_BASE_URL,
 } from './constants';
+
+export function resolveResumeParserMaxTokens(envValue?: string): number {
+  if (envValue) {
+    const parsed = parseInt(envValue, 10);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return DEFAULT_RESUME_PARSER_MAX_TOKENS;
+}
 
 export interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant';
