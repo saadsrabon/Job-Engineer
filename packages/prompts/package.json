@@ -1,0 +1,16 @@
+{
+  "name": "@jobos/prompts",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@jobos/config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

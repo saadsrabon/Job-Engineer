@@ -1,0 +1,16 @@
+---
+description: Next.js frontend conventions for JobOS web and landing apps
+globs: "{apps/web/**,apps/landing/**}"
+alwaysApply: false
+---
+
+# Frontend
+
+- Next.js App Router — Server Components first.
+- Client Components only when needed (interactivity, hooks, browser APIs).
+- TanStack Query for all server state and API calls.
+- Zustand only for client UI state (sidebar, view toggles) — not server data.
+- No prop drilling — use composition or stores for shared UI state.
+- Lazy load heavy components and routes.
+- Route groups for auth, dashboard, onboarding layouts.
+- Suspense boundaries around async server components where applicable.

@@ -1,0 +1,14 @@
+---
+description: Performance standards for JobOS
+alwaysApply: true
+---
+
+# Performance
+
+- Never block API with AI or file parsing — use BullMQ workers.
+- Lazy-load heavy frontend components (charts, kanban, GSAP).
+- TanStack Query staleTime to reduce redundant fetches.
+- Target excellent Core Web Vitals on landing and dashboard.
+- Turborepo caching for CI builds.
+- Prisma: select only needed fields; avoid N+1 with includes.
+- Redis connection pooling for BullMQ.

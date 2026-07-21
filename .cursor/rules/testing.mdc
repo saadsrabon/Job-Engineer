@@ -1,0 +1,13 @@
+---
+description: Testing conventions
+globs: "**/*.spec.ts"
+alwaysApply: false
+---
+
+# Testing
+
+- Unit tests per service and repository.
+- Mock Prisma in service tests — test business logic in isolation.
+- API e2e tests for critical flows: auth, resume upload, job CRUD.
+- Test file co-located: `users.service.spec.ts` next to `users.service.ts`.
+- No snapshot tests for UI — prefer behavior assertions.

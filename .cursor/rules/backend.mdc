@@ -1,0 +1,17 @@
+---
+description: NestJS backend conventions for JobOS API
+globs: apps/api/**
+alwaysApply: false
+---
+
+# Backend
+
+- NestJS modules only — one module per domain.
+- No raw SQL — Prisma only via repositories.
+- Validate DTOs with class-validator; share Zod schemas from packages/types.
+- Event-driven: emit domain events for cross-module side effects.
+- Queue long tasks via BullMQ — return 202 + job ID.
+- API versioning: prefix `/api/v1`.
+- Swagger documentation on all endpoints.
+- Structured logging with pino — no console.log in production code.
+- Auth: Clerk JWT guard on protected routes.

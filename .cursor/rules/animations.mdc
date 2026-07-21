@@ -1,0 +1,17 @@
+---
+description: GSAP animation rules for landing page
+globs: apps/landing/**
+alwaysApply: false
+---
+
+# Animations (GSAP)
+
+Allowed: opacity, translate, scale, clip-path, mask reveal, scroll pinning, text split, card stagger, SVG line draw, counters.
+
+Avoid: excessive parallax, bouncing, spinning icons, flashy transitions.
+
+Feel: Apple, Linear, Stripe — not marketing template.
+
+Always check `prefers-reduced-motion: reduce` and skip animations.
+Lazy-load GSAP — dynamic import only in client components.
+ScrollTrigger only on landing app, not dashboard.

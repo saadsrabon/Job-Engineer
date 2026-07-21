@@ -1,0 +1,17 @@
+---
+description: JobOS architecture standards — feature-first, repository pattern, strict boundaries
+alwaysApply: true
+---
+
+# Architecture
+
+- Feature-first architecture: each domain owns its module end-to-end.
+- No business logic in controllers — delegate to services.
+- Services must have single responsibility.
+- Use repository pattern for data access (Prisma in repositories only).
+- DTO validation on all API inputs (class-validator + Zod in packages/types).
+- No circular dependencies between modules or packages.
+- Shared types live in `packages/types`; never duplicate domain types.
+- Strict TypeScript everywhere — no `any` unless unavoidable.
+- Every feature module must be independently testable.
+- Long-running work (AI, parsing) goes to BullMQ workers, never blocks API.

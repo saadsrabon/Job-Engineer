@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PipelineStage {
+  Saved
+  Interested
+  Researching
+  ResumeReady
+  Applied
+  Assessment
+  Interview
+  HR
+  Negotiation
+  Offer
+  Rejected
+  Accepted
+  Archived
+}
+
+enum ParseJobStatus {
+  Pending
+  Processing
+  Completed
+  Failed
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  clerkId            String   @unique
+  email              String   @unique
+  name               String?
+  avatar             String?
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  experiences    Experience[]
+  projects       Project[]
+  education      Education[]
+  skills         Skill[]
+  certificates   Certificate[]
+  awards         Award[]
+  languages      Language[]
+  socialLinks    SocialLink[]
+  resumeVersions ResumeVersion[]
+  parseJobs      ResumeParseJob[]
+  jobs           Job[]
+  jobTags        JobTag[]
+
+  @@map("users")
+}
+
+model Experience {
+  id          String   @id @default(cuid())
+  userId      String
+  company     String
+  title       String
+  location    String?
+  startDate   String
+  endDate     String?
+  current     Boolean  @default(false)
+  description String?
+  bullets     String[] @default([])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("experiences")
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  description  String?
+  url          String?
+  startDate    String?
+  endDate      String?
+  technologies String[] @default([])
+  bullets      String[] @default([])
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model Education {
+  id          String   @id @default(cuid())
+  userId      String
+  institution String
+  degree      String
+  field       String?
+  startDate   String?
+  endDate     String?
+  gpa         String?
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("education")
+}
+
+model Skill {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  category  String?
+  level     String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("skills")
+}
+
+model Certificate {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  issuer     String
+  issueDate  String?
+  expiryDate String?
+  url        String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("certificates")
+}
+
+model Award {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  issuer      String?
+  date        String?
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("awards")
+}
+
+model Language {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  proficiency String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("languages")
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  userId    String
+  platform  String
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("social_links")
+}
+
+model ResumeVersion {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  templateId String   @default("default")
+  snapshot   Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("resume_versions")
+}
+
+model ResumeParseJob {
+  id            String         @id @default(cuid())
+  userId        String
+  fileName      String
+  filePath      String
+  fileSize      Int
+  status        ParseJobStatus @default(Pending)
+  extractedText String?
+  extractedData Json?
+  error         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  completedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("resume_parse_jobs")
+}
+
+model Job {
+  id          String        @id @default(cuid())
+  userId      String
+  title       String
+  company     String
+  url         String?
+  source      String?
+  location    String?
+  description String?
+  salaryMin   Int?
+  salaryMax   Int?
+  stage       PipelineStage @default(Saved)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes       JobNote[]
+  tags        JobTagOnJob[]
+  reminders   JobReminder[]
+  attachments JobAttachment[]
+  stageHistory JobStageHistory[]
+
+  @@index([userId])
+  @@index([stage])
+  @@map("jobs")
+}
+
+model JobNote {
+  id        String   @id @default(cuid())
+  jobId     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_notes")
+}
+
+model JobTag {
+  id     String @id @default(cuid())
+  userId String
+  name   String
+  color  String @default("#3B82F6")
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs JobTagOnJob[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("job_tags")
+}
+
+model JobTagOnJob {
+  jobId String
+  tagId String
+
+  job Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  tag JobTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, tagId])
+  @@map("job_tags_on_jobs")
+}
+
+model JobReminder {
+  id        String   @id @default(cuid())
+  jobId     String
+  title     String
+  dueAt     DateTime
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_reminders")
+}
+
+model JobAttachment {
+  id        String   @id @default(cuid())
+  jobId     String
+  fileName  String
+  filePath  String
+  fileSize  Int
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_attachments")
+}
+
+model JobStageHistory {
+  id        String        @id @default(cuid())
+  jobId     String
+  fromStage PipelineStage?
+  toStage   PipelineStage
+  createdAt DateTime      @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_stage_history")
+}
+
+model AiModelConfig {
+  id        String   @id @default(cuid())
+  agent     String   @unique
+  provider  String   @default("openrouter")
+  modelId   String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ai_model_configs")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  entityId  String?
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}

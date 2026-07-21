@@ -1,0 +1,25 @@
+---
+description: JobOS UI design system — professional SaaS aesthetic
+globs: "{packages/ui/**,**/*.tsx}"
+alwaysApply: false
+---
+
+# UI Design System
+
+Inspired by GitHub, Linear, Stripe, Vercel, Notion — professional SaaS only.
+
+## Banned Patterns
+
+- No AI gradients, neon colors, or purple AI aesthetics
+- No glassmorphism, glowing cards, floating blobs
+- No animated backgrounds or decorative-only motion
+
+## Required
+
+- shadcn/ui + Tailwind + Radix + Lucide
+- 8px spacing system, rounded-xl, clean borders, subtle shadows
+- Single accent color: blue only
+- Dark theme: #09090B background, #18181B cards, #27272A borders
+- CRM/dashboard feel: Linear × Notion × GitHub Projects
+- WCAG-compliant contrast, focus states, keyboard navigation
+- Respect `prefers-reduced-motion`

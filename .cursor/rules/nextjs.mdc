@@ -1,0 +1,14 @@
+---
+description: Next.js App Router conventions
+globs: "{apps/web/**,apps/landing/**}"
+alwaysApply: false
+---
+
+# Next.js
+
+- App Router with route groups: `(auth)`, `(dashboard)`, onboarding.
+- Server Components by default — add `'use client'` only when required.
+- Clerk middleware protects dashboard routes.
+- Metadata exported from layout.tsx and page.tsx.
+- Transpile monorepo packages in next.config.js.
+- Import global styles from `@jobos/ui/globals.css`.

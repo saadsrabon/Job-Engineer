@@ -1,0 +1,14 @@
+---
+description: Prisma and database conventions
+globs: packages/database/**
+alwaysApply: false
+---
+
+# Database
+
+- Prisma schema is the single source of truth for data model.
+- All migrations via `prisma migrate dev` — never hand-edit applied migrations.
+- No raw SQL in application code.
+- Career Library is canonical — resumes are generated exports, not primary storage.
+- Index foreign keys and frequently queried columns.
+- Seed scripts in `prisma/seed.ts` for dev data and AI model configs.

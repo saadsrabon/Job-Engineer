@@ -1,0 +1,14 @@
+---
+description: AI agent and prompt conventions
+globs: "{packages/prompts/**,apps/worker/**}"
+alwaysApply: false
+---
+
+# AI
+
+- One agent per file in packages/prompts.
+- Each agent: own prompt, own context, own model config.
+- Model IDs read from AiModelConfig DB table — never hardcode in worker logic.
+- OpenRouter client in packages/shared — fallback to DEFAULT_MODELS.
+- Workers extract JSON from AI responses with validation.
+- Never block API requests with AI calls — always queue.

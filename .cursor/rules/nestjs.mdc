@@ -1,0 +1,20 @@
+---
+description: NestJS module structure conventions
+globs: apps/api/**
+alwaysApply: false
+---
+
+# NestJS
+
+Each module contains:
+- `*.module.ts` — wiring
+- `*.controller.ts` — HTTP layer only
+- `*.service.ts` — business logic
+- `*.repository.ts` — Prisma data access
+- `dto/` — input validation classes
+- `events/` — domain event handlers (when needed)
+- `*.spec.ts` — unit tests
+
+Response format: `{ data: T, message?: string }`.
+Use `@CurrentUser()` decorator for authenticated user.
+Register new modules in app.module.ts.

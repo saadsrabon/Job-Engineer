@@ -1,0 +1,14 @@
+---
+description: Security standards for JobOS
+alwaysApply: true
+---
+
+# Security
+
+- Clerk handles auth — verify JWT in NestJS guard, never roll custom auth.
+- Never commit secrets — use .env.local, document in .env.example only.
+- Validate all user input via DTOs before processing.
+- Scope all database queries to authenticated userId.
+- Webhook endpoints verify Svix signatures (Clerk webhooks).
+- CORS restricted to known app origins.
+- File uploads: validate mime type and size; store outside web root.

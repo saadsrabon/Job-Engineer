@@ -1,0 +1,27 @@
+{
+  "name": "@jobos/worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jobos/database": "workspace:*",
+    "@jobos/prompts": "workspace:*",
+    "@jobos/shared": "workspace:*",
+    "bullmq": "^5.53.0",
+    "dotenv": "^16.5.0",
+    "ioredis": "^5.6.1",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@jobos/config": "workspace:*",
+    "@types/node": "^22.15.21",
+    "@types/pdf-parse": "^1.1.5",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
