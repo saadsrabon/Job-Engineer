@@ -17,6 +17,12 @@ import { CreateExperienceDto } from './dto/create-experience.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { CreateEducationDto } from './dto/create-education.dto';
+import {
+  CreateAwardDto,
+  CreateCertificateDto,
+  CreateLanguageDto,
+  CreateSocialLinkDto,
+} from './dto/create-extra.dto';
 
 @ApiTags('career-library')
 @ApiBearerAuth()
@@ -104,5 +110,77 @@ export class CareerLibraryController {
   @Delete('education/:id')
   deleteEducation(@CurrentUser() user: User, @Param('id') id: string) {
     return this.service.deleteEducation(user.id, id).then((data) => ({ data }));
+  }
+
+  @Post('certificates')
+  createCertificate(@CurrentUser() user: User, @Body() dto: CreateCertificateDto) {
+    return this.service.createCertificate(user.id, dto).then((data) => ({ data }));
+  }
+
+  @Patch('certificates/:id')
+  updateCertificate(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: CreateCertificateDto,
+  ) {
+    return this.service.updateCertificate(user.id, id, dto).then((data) => ({ data }));
+  }
+
+  @Delete('certificates/:id')
+  deleteCertificate(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.deleteCertificate(user.id, id).then((data) => ({ data }));
+  }
+
+  @Post('awards')
+  createAward(@CurrentUser() user: User, @Body() dto: CreateAwardDto) {
+    return this.service.createAward(user.id, dto).then((data) => ({ data }));
+  }
+
+  @Patch('awards/:id')
+  updateAward(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: CreateAwardDto) {
+    return this.service.updateAward(user.id, id, dto).then((data) => ({ data }));
+  }
+
+  @Delete('awards/:id')
+  deleteAward(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.deleteAward(user.id, id).then((data) => ({ data }));
+  }
+
+  @Post('languages')
+  createLanguage(@CurrentUser() user: User, @Body() dto: CreateLanguageDto) {
+    return this.service.createLanguage(user.id, dto).then((data) => ({ data }));
+  }
+
+  @Patch('languages/:id')
+  updateLanguage(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: CreateLanguageDto,
+  ) {
+    return this.service.updateLanguage(user.id, id, dto).then((data) => ({ data }));
+  }
+
+  @Delete('languages/:id')
+  deleteLanguage(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.deleteLanguage(user.id, id).then((data) => ({ data }));
+  }
+
+  @Post('social-links')
+  createSocialLink(@CurrentUser() user: User, @Body() dto: CreateSocialLinkDto) {
+    return this.service.createSocialLink(user.id, dto).then((data) => ({ data }));
+  }
+
+  @Patch('social-links/:id')
+  updateSocialLink(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: CreateSocialLinkDto,
+  ) {
+    return this.service.updateSocialLink(user.id, id, dto).then((data) => ({ data }));
+  }
+
+  @Delete('social-links/:id')
+  deleteSocialLink(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.deleteSocialLink(user.id, id).then((data) => ({ data }));
   }
 }

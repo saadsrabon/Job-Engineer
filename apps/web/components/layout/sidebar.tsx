@@ -13,7 +13,6 @@ import {
 import { cn } from '@jobos/ui';
 import { Button } from '@jobos/ui';
 import { useUiStore } from '@/lib/store';
-import { UserButton } from '@clerk/nextjs';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -70,9 +69,11 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border p-4">
-        <UserButton afterSignOutUrl="/" />
-      </div>
+      {sidebarOpen && (
+        <div className="border-t border-sidebar-border p-4 text-xs text-muted-foreground">
+          JobOS v0.1
+        </div>
+      )}
     </aside>
   );
 }

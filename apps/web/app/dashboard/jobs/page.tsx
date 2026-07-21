@@ -43,14 +43,7 @@ interface Job {
   updatedAt: string;
 }
 
-const KANBAN_STAGES: PipelineStage[] = [
-  PipelineStage.Saved,
-  PipelineStage.Interested,
-  PipelineStage.Applied,
-  PipelineStage.Interview,
-  PipelineStage.Offer,
-  PipelineStage.Rejected,
-];
+const KANBAN_STAGES = PIPELINE_STAGES;
 
 function JobCard({ job }: { job: Job }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -86,9 +79,9 @@ function KanbanColumn({ stage, jobs }: { stage: PipelineStage; jobs: Job[] }) {
   const columnJobs = jobs.filter((j) => j.stage === stage);
 
   return (
-    <div className="flex w-72 shrink-0 flex-col">
+    <div className="flex w-56 shrink-0 flex-col">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-medium">{stage}</h3>
+        <h3 className="truncate text-xs font-medium">{stage}</h3>
         <Badge variant="secondary">{columnJobs.length}</Badge>
       </div>
       <div

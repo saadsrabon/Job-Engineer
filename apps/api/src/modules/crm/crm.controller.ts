@@ -15,13 +15,21 @@ export class CrmController {
   constructor(private service: CrmService) {}
 
   @Post('jobs/:jobId/notes')
-  createNote(@Param('jobId') jobId: string, @Body() dto: CreateNoteDto) {
-    return this.service.createNote(jobId, dto.content).then((data) => ({ data }));
+  createNote(
+    @CurrentUser() user: User,
+    @Param('jobId') jobId: string,
+    @Body() dto: CreateNoteDto,
+  ) {
+    return this.service.createNote(user.id, jobId, dto.content).then((data) => ({ data }));
   }
 
   @Delete('jobs/:jobId/notes/:noteId')
-  deleteNote(@Param('jobId') jobId: string, @Param('noteId') noteId: string) {
-    return this.service.deleteNote(jobId, noteId).then((data) => ({ data }));
+  deleteNote(
+    @CurrentUser() user: User,
+    @Param('jobId') jobId: string,
+    @Param('noteId') noteId: string,
+  ) {
+    return this.service.deleteNote(user.id, jobId, noteId).then((data) => ({ data }));
   }
 
   @Get('tags')
@@ -35,12 +43,20 @@ export class CrmController {
   }
 
   @Post('jobs/:jobId/tags/:tagId')
-  addTag(@Param('jobId') jobId: string, @Param('tagId') tagId: string) {
-    return this.service.addTagToJob(jobId, tagId).then((data) => ({ data }));
+  addTag(
+    @CurrentUser() user: User,
+    @Param('jobId') jobId: string,
+    @Param('tagId') tagId: string,
+  ) {
+    return this.service.addTagToJob(user.id, jobId, tagId).then((data) => ({ data }));
   }
 
   @Delete('jobs/:jobId/tags/:tagId')
-  removeTag(@Param('jobId') jobId: string, @Param('tagId') tagId: string) {
-    return this.service.removeTagFromJob(jobId, tagId).then((data) => ({ data }));
+  removeTag(
+    @CurrentUser() user: User,
+    @Param('jobId') jobId: string,
+    @Param('tagId') tagId: string,
+  ) {
+    return this.service.removeTagFromJob(user.id, jobId, tagId).then((data) => ({ data }));
   }
 }

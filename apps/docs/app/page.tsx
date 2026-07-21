@@ -16,7 +16,8 @@ export default function DocsPage() {
             <li>Web: Next.js 15 App Router</li>
             <li>API: NestJS modular architecture</li>
             <li>Worker: BullMQ + Redis</li>
-            <li>Database: Neon Postgres + Prisma</li>
+            <li>Database: PostgreSQL + Prisma (Docker locally)</li>
+            <li>Queue: Redis + BullMQ (Docker locally)</li>
             <li>Auth: Clerk</li>
           </ul>
         </section>

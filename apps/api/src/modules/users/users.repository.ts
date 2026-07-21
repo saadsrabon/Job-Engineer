@@ -30,4 +30,12 @@ export class UsersRepository {
       create: data,
     });
   }
+
+  async deleteByClerkId(clerkId: string) {
+    const user = await this.prisma.user.findUnique({ where: { clerkId } });
+    if (!user) return null;
+
+    await this.prisma.activityLog.deleteMany({ where: { userId: user.id } });
+    return this.prisma.user.delete({ where: { id: user.id } });
+  }
 }

@@ -1,14 +1,27 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useApiClient } from '@/lib/api';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@jobos/ui';
+import type { UserProfile } from '@jobos/types';
+import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@jobos/ui';
 
 export default function OnboardingPage() {
   const api = useApiClient();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => api.get<UserProfile>('/users/me'),
+  });
+
+  useEffect(() => {
+    if (user?.onboardingComplete) {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
 
   const complete = useMutation({
     mutationFn: () => api.patch('/users/me/onboarding'),
@@ -17,6 +30,14 @@ export default function OnboardingPage() {
       router.push('/dashboard/resumes');
     },
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Skeleton className="h-8 w-48" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">

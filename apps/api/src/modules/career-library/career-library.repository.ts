@@ -156,4 +156,52 @@ export class CareerLibraryRepository {
   deleteEducation(userId: string, id: string) {
     return this.prisma.education.delete({ where: { id, userId } });
   }
+
+  createCertificate(userId: string, data: Record<string, unknown>) {
+    return this.prisma.certificate.create({ data: { ...data, userId } as never });
+  }
+
+  updateCertificate(userId: string, id: string, data: Record<string, unknown>) {
+    return this.prisma.certificate.update({ where: { id, userId }, data: data as never });
+  }
+
+  deleteCertificate(userId: string, id: string) {
+    return this.prisma.certificate.delete({ where: { id, userId } });
+  }
+
+  createAward(userId: string, data: Record<string, unknown>) {
+    return this.prisma.award.create({ data: { ...data, userId } as never });
+  }
+
+  updateAward(userId: string, id: string, data: Record<string, unknown>) {
+    return this.prisma.award.update({ where: { id, userId }, data: data as never });
+  }
+
+  deleteAward(userId: string, id: string) {
+    return this.prisma.award.delete({ where: { id, userId } });
+  }
+
+  createLanguage(userId: string, data: Record<string, unknown>) {
+    return this.prisma.language.create({ data: { ...data, userId } as never });
+  }
+
+  updateLanguage(userId: string, id: string, data: Record<string, unknown>) {
+    return this.prisma.language.update({ where: { id, userId }, data: data as never });
+  }
+
+  deleteLanguage(userId: string, id: string) {
+    return this.prisma.language.delete({ where: { id, userId } });
+  }
+
+  createSocialLink(userId: string, data: Record<string, unknown>) {
+    return this.prisma.socialLink.create({ data: { ...data, userId } as never });
+  }
+
+  updateSocialLink(userId: string, id: string, data: Record<string, unknown>) {
+    return this.prisma.socialLink.update({ where: { id, userId }, data: data as never });
+  }
+
+  deleteSocialLink(userId: string, id: string) {
+    return this.prisma.socialLink.delete({ where: { id, userId } });
+  }
 }

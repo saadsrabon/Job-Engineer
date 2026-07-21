@@ -24,8 +24,13 @@ export class AuthController {
     const wh = new Webhook(webhookSecret);
     let evt: { type: string; data: Record<string, unknown> };
 
+    const payload = req.rawBody?.toString('utf8');
+    if (!payload) {
+      throw new BadRequestException('Missing webhook payload');
+    }
+
     try {
-      evt = wh.verify(JSON.stringify(req.body), {
+      evt = wh.verify(payload, {
         'svix-id': svixId,
         'svix-timestamp': svixTimestamp,
         'svix-signature': svixSignature,
@@ -34,8 +39,14 @@ export class AuthController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    if (evt.type === 'user.created' || evt.type === 'user.updated') {
+    if (evt.type === 'user.created' || evt.type === 'user.updated' || evt.type === 'user.deleted') {
       const data = evt.data;
+
+      if (evt.type === 'user.deleted') {
+        await this.usersRepository.deleteByClerkId(data.id as string);
+        return { data: { received: true } };
+      }
+
       const emailAddresses = data.email_addresses as Array<{ email_address: string }>;
       const primaryEmail = emailAddresses?.[0]?.email_address;
 

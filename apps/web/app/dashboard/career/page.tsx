@@ -24,45 +24,327 @@ import {
   DialogFooter,
   Skeleton,
 } from '@jobos/ui';
-import { Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+
+type EntityKey =
+  | 'experiences'
+  | 'projects'
+  | 'skills'
+  | 'education'
+  | 'certificates'
+  | 'awards'
+  | 'languages'
+  | 'socialLinks';
+
+type CareerItem = Record<string, string | string[] | boolean | number | null | undefined>;
+
+const TAB_CONFIG: Record<
+  EntityKey,
+  { label: string; endpoint: string; addLabel: string; titleField: string; subtitleField?: string }
+> = {
+  experiences: {
+    label: 'Experience',
+    endpoint: 'experiences',
+    addLabel: 'Add Experience',
+    titleField: 'title',
+    subtitleField: 'company',
+  },
+  projects: {
+    label: 'Projects',
+    endpoint: 'projects',
+    addLabel: 'Add Project',
+    titleField: 'name',
+  },
+  skills: { label: 'Skills', endpoint: 'skills', addLabel: 'Add Skill', titleField: 'name' },
+  education: {
+    label: 'Education',
+    endpoint: 'education',
+    addLabel: 'Add Education',
+    titleField: 'degree',
+    subtitleField: 'institution',
+  },
+  certificates: {
+    label: 'Certificates',
+    endpoint: 'certificates',
+    addLabel: 'Add Certificate',
+    titleField: 'name',
+    subtitleField: 'issuer',
+  },
+  awards: {
+    label: 'Awards',
+    endpoint: 'awards',
+    addLabel: 'Add Award',
+    titleField: 'title',
+    subtitleField: 'issuer',
+  },
+  languages: {
+    label: 'Languages',
+    endpoint: 'languages',
+    addLabel: 'Add Language',
+    titleField: 'name',
+    subtitleField: 'proficiency',
+  },
+  socialLinks: {
+    label: 'Links',
+    endpoint: 'social-links',
+    addLabel: 'Add Link',
+    titleField: 'platform',
+    subtitleField: 'url',
+  },
+};
+
+function EntityForm({
+  entity,
+  initialValues,
+  onSubmit,
+}: {
+  entity: EntityKey;
+  initialValues?: CareerItem;
+  onSubmit: (data: Record<string, unknown>) => void;
+}) {
+  const value = (key: string) => {
+    const v = initialValues?.[key];
+    if (Array.isArray(v)) return v.join('\n');
+    if (v == null) return '';
+    return String(v);
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const data: Record<string, unknown> = {};
+
+    for (const [key, raw] of form.entries()) {
+      if (key === 'bullets' || key === 'technologies') {
+        data[key] = String(raw).split('\n').filter(Boolean);
+      } else if (key === 'current') {
+        data[key] = true;
+      } else if (raw) {
+        data[key] = raw;
+      }
+    }
+
+    onSubmit(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {entity === 'experiences' && (
+        <>
+          <Field label="Title" name="title" required defaultValue={value('title')} />
+          <Field label="Company" name="company" required defaultValue={value('company')} />
+          <div className="grid grid-cols-2 gap-4">
+            <Field
+              label="Start Date"
+              name="startDate"
+              placeholder="2020-01"
+              required
+              defaultValue={value('startDate')}
+            />
+            <Field
+              label="End Date"
+              name="endDate"
+              placeholder="2023-06"
+              defaultValue={value('endDate')}
+            />
+          </div>
+          <Field
+            label="Bullets (one per line)"
+            name="bullets"
+            textarea
+            defaultValue={value('bullets')}
+          />
+        </>
+      )}
+      {entity === 'projects' && (
+        <>
+          <Field label="Name" name="name" required defaultValue={value('name')} />
+          <Field
+            label="Description"
+            name="description"
+            textarea
+            defaultValue={value('description')}
+          />
+          <Field label="URL" name="url" defaultValue={value('url')} />
+          <Field
+            label="Technologies (one per line)"
+            name="technologies"
+            textarea
+            defaultValue={value('technologies')}
+          />
+        </>
+      )}
+      {entity === 'skills' && (
+        <>
+          <Field label="Name" name="name" required defaultValue={value('name')} />
+          <Field label="Category" name="category" defaultValue={value('category')} />
+          <Field label="Level" name="level" defaultValue={value('level')} />
+        </>
+      )}
+      {entity === 'education' && (
+        <>
+          <Field label="Degree" name="degree" required defaultValue={value('degree')} />
+          <Field
+            label="Institution"
+            name="institution"
+            required
+            defaultValue={value('institution')}
+          />
+          <Field label="Field" name="field" defaultValue={value('field')} />
+          <Field label="GPA" name="gpa" defaultValue={value('gpa')} />
+        </>
+      )}
+      {entity === 'certificates' && (
+        <>
+          <Field label="Name" name="name" required defaultValue={value('name')} />
+          <Field label="Issuer" name="issuer" required defaultValue={value('issuer')} />
+          <Field label="Issue Date" name="issueDate" defaultValue={value('issueDate')} />
+          <Field label="URL" name="url" defaultValue={value('url')} />
+        </>
+      )}
+      {entity === 'awards' && (
+        <>
+          <Field label="Title" name="title" required defaultValue={value('title')} />
+          <Field label="Issuer" name="issuer" defaultValue={value('issuer')} />
+          <Field label="Date" name="date" defaultValue={value('date')} />
+          <Field
+            label="Description"
+            name="description"
+            textarea
+            defaultValue={value('description')}
+          />
+        </>
+      )}
+      {entity === 'languages' && (
+        <>
+          <Field label="Language" name="name" required defaultValue={value('name')} />
+          <Field
+            label="Proficiency"
+            name="proficiency"
+            placeholder="Native, Fluent, etc."
+            defaultValue={value('proficiency')}
+          />
+        </>
+      )}
+      {entity === 'socialLinks' && (
+        <>
+          <Field
+            label="Platform"
+            name="platform"
+            placeholder="LinkedIn"
+            required
+            defaultValue={value('platform')}
+          />
+          <Field label="URL" name="url" required defaultValue={value('url')} />
+        </>
+      )}
+      <DialogFooter>
+        <Button type="submit">Save</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function Field({
+  label,
+  name,
+  required,
+  placeholder,
+  textarea,
+  defaultValue,
+}: {
+  label: string;
+  name: string;
+  required?: boolean;
+  placeholder?: string;
+  textarea?: boolean;
+  defaultValue?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={name}>{label}</Label>
+      {textarea ? (
+        <Textarea
+          id={name}
+          name={name}
+          placeholder={placeholder}
+          rows={3}
+          required={required}
+          defaultValue={defaultValue}
+        />
+      ) : (
+        <Input
+          id={name}
+          name={name}
+          placeholder={placeholder}
+          required={required}
+          defaultValue={defaultValue}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function CareerPage() {
   const api = useApiClient();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<EntityKey>('experiences');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('experiences');
+  const [editingItem, setEditingItem] = useState<{ id: string; values: CareerItem } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['career'],
     queryFn: () => api.get<CareerLibrary>('/career'),
   });
 
-  const createExperience = useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/career/experiences', body),
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingItem(null);
+  };
+
+  const createEntity = useMutation({
+    mutationFn: ({ endpoint, body }: { endpoint: string; body: Record<string, unknown> }) =>
+      api.post(`/career/${endpoint}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['career'] });
-      setDialogOpen(false);
+      closeDialog();
     },
   });
 
-  const deleteExperience = useMutation({
-    mutationFn: (id: string) => api.delete(`/career/experiences/${id}`),
+  const updateEntity = useMutation({
+    mutationFn: ({
+      endpoint,
+      id,
+      body,
+    }: {
+      endpoint: string;
+      id: string;
+      body: Record<string, unknown>;
+    }) => api.patch(`/career/${endpoint}/${id}`, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['career'] });
+      closeDialog();
+    },
+  });
+
+  const deleteEntity = useMutation({
+    mutationFn: ({ endpoint, id }: { endpoint: string; id: string }) =>
+      api.delete(`/career/${endpoint}/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['career'] }),
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    createExperience.mutate({
-      company: form.get('company'),
-      title: form.get('title'),
-      startDate: form.get('startDate'),
-      endDate: form.get('endDate') || undefined,
-      current: form.get('current') === 'on',
-      description: form.get('description') || undefined,
-      bullets: (form.get('bullets') as string)?.split('\n').filter(Boolean) || [],
-    });
+  const openCreateDialog = () => {
+    setEditingItem(null);
+    setDialogOpen(true);
   };
+
+  const openEditDialog = (item: CareerItem) => {
+    setEditingItem({ id: String(item.id), values: item });
+    setDialogOpen(true);
+  };
+
+  const config = TAB_CONFIG[activeTab];
+  const isEditing = Boolean(editingItem);
 
   if (isLoading) {
     return (
@@ -80,156 +362,148 @@ export default function CareerPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Career Library</h1>
           <p className="text-muted-foreground">Your reusable career data — the source of truth.</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4" />
-          Add Experience
+          {config.addLabel}
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="experiences">Experience</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="skills">Skills</TabsTrigger>
-          <TabsTrigger value="education">Education</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EntityKey)}>
+        <TabsList className="flex h-auto flex-wrap gap-1">
+          {Object.entries(TAB_CONFIG).map(([key, { label }]) => (
+            <TabsTrigger key={key} value={key}>
+              {label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="experiences" className="space-y-4">
-          {data?.experiences?.length ? (
-            data.experiences.map((exp) => (
-              <Card key={exp.id}>
-                <CardHeader className="flex flex-row items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{exp.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {exp.company} · {exp.startDate}
-                      {exp.current ? ' — Present' : exp.endDate ? ` — ${exp.endDate}` : ''}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteExperience.mutate(exp.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardHeader>
-                {exp.bullets?.length > 0 && (
-                  <CardContent>
-                    <ul className="list-inside list-disc space-y-1 text-sm">
-                      {exp.bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
-                      ))}
-                    </ul>
+        {Object.keys(TAB_CONFIG).map((key) => {
+          const tabKey = key as EntityKey;
+          const tabConfig = TAB_CONFIG[tabKey];
+          const tabItems = (data?.[tabKey] ?? []) as unknown as CareerItem[];
+
+          return (
+            <TabsContent key={key} value={key} className="space-y-4">
+              {tabKey === 'skills' && tabItems.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {tabItems.map((item) => (
+                    <span
+                      key={String(item.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted px-3 py-1 text-sm"
+                    >
+                      {String(item.name)}
+                      <button
+                        type="button"
+                        onClick={() => openEditDialog(item)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Edit skill"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          deleteEntity.mutate({
+                            endpoint: tabConfig.endpoint,
+                            id: String(item.id),
+                          })
+                        }
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Delete skill"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : tabItems.length > 0 ? (
+                tabItems.map((item) => (
+                  <Card key={String(item.id)}>
+                    <CardHeader className="flex flex-row items-start justify-between">
+                      <div>
+                        <CardTitle className="text-base">
+                          {String(item[tabConfig.titleField] ?? '')}
+                        </CardTitle>
+                        {tabConfig.subtitleField && item[tabConfig.subtitleField] && (
+                          <p className="text-sm text-muted-foreground">
+                            {String(item[tabConfig.subtitleField])}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(item)}
+                          aria-label="Edit item"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            deleteEntity.mutate({
+                              endpoint: tabConfig.endpoint,
+                              id: String(item.id),
+                            })
+                          }
+                          aria-label="Delete item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    {Array.isArray(item.bullets) && item.bullets.length > 0 && (
+                      <CardContent>
+                        <ul className="list-inside list-disc space-y-1 text-sm">
+                          {item.bullets.map((b, i) => (
+                            <li key={i}>{b}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No {tabConfig.label.toLowerCase()} yet. Upload a resume or add manually.
                   </CardContent>
-                )}
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No experiences yet. Upload a resume or add manually.
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="projects" className="space-y-4">
-          {data?.projects?.length ? (
-            data.projects.map((p) => (
-              <Card key={p.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{p.name}</CardTitle>
-                  {p.description && (
-                    <p className="text-sm text-muted-foreground">{p.description}</p>
-                  )}
-                </CardHeader>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No projects yet.
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="skills" className="space-y-4">
-          {data?.skills?.length ? (
-            <div className="flex flex-wrap gap-2">
-              {data.skills.map((s) => (
-                <span
-                  key={s.id}
-                  className="rounded-lg border border-border bg-muted px-3 py-1 text-sm"
-                >
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No skills yet.
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="education" className="space-y-4">
-          {data?.education?.length ? (
-            data.education.map((e) => (
-              <Card key={e.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{e.degree}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{e.institution}</p>
-                </CardHeader>
-              </Card>
-            ))
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No education entries yet.
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+                </Card>
+              )}
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+          else setDialogOpen(true);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Experience</DialogTitle>
+            <DialogTitle>{isEditing ? `Edit ${config.label}` : config.addLabel}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
-              <Input id="company" name="company" required />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input id="startDate" name="startDate" placeholder="2020-01" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
-                <Input id="endDate" name="endDate" placeholder="2023-06" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bullets">Bullet Points (one per line)</Label>
-              <Textarea id="bullets" name="bullets" rows={4} />
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={createExperience.isPending}>
-                Save
-              </Button>
-            </DialogFooter>
-          </form>
+          <EntityForm
+            key={editingItem?.id ?? 'new'}
+            entity={activeTab}
+            initialValues={editingItem?.values}
+            onSubmit={(body) => {
+              if (editingItem) {
+                updateEntity.mutate({
+                  endpoint: config.endpoint,
+                  id: editingItem.id,
+                  body,
+                });
+              } else {
+                createEntity.mutate({ endpoint: config.endpoint, body });
+              }
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>

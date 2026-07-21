@@ -20,6 +20,9 @@ export default function ResumesPage() {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
   const { data: jobs, isLoading } = useQuery({
     queryKey: ['parse-jobs'],
@@ -33,11 +36,25 @@ export default function ResumesPage() {
   });
 
   const upload = async (file: File) => {
+    setUploadError(null);
+
+    if (file.type !== 'application/pdf') {
+      setUploadError('Only PDF files are allowed.');
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError('File too large. Maximum size is 10MB.');
+      return;
+    }
+
     setUploading(true);
     try {
       await api.upload<{ id: string }>('/resume/upload', file);
       queryClient.invalidateQueries({ queryKey: ['parse-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['career'] });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -73,11 +90,12 @@ export default function ResumesPage() {
           <input
             ref={fileRef}
             type="file"
-            accept=".pdf,.doc,.docx"
+            accept="application/pdf,.pdf"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) upload(file);
+              e.target.value = '';
             }}
           />
           <Button
@@ -88,8 +106,11 @@ export default function ResumesPage() {
             <Upload className="h-4 w-4" />
             {uploading ? 'Uploading...' : 'Upload PDF'}
           </Button>
+          {uploadError && (
+            <p className="mt-2 text-sm text-destructive">{uploadError}</p>
+          )}
           <p className="mt-2 text-xs text-muted-foreground">
-            PDF only in Phase 1. Parsed data imports into Career Library.
+            PDF only, max 10MB. Parsed data imports into Career Library when the worker is running.
           </p>
         </CardContent>
       </Card>
@@ -117,9 +138,14 @@ export default function ResumesPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {statusIcon(job.status)}
-                    <Badge variant="outline">{job.status}</Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                      {statusIcon(job.status)}
+                      <Badge variant="outline">{job.status}</Badge>
+                    </div>
+                    {job.status === 'Failed' && job.error && (
+                      <p className="max-w-xs text-right text-xs text-destructive">{job.error}</p>
+                    )}
                   </div>
                 </li>
               ))}

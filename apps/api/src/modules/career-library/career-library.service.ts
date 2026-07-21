@@ -60,4 +60,52 @@ export class CareerLibraryService {
   deleteEducation(userId: string, id: string) {
     return this.repository.deleteEducation(userId, id);
   }
+
+  createCertificate(userId: string, data: object) {
+    return this.repository.createCertificate(userId, data as Record<string, unknown>);
+  }
+
+  updateCertificate(userId: string, id: string, data: object) {
+    return this.repository.updateCertificate(userId, id, data as Record<string, unknown>);
+  }
+
+  deleteCertificate(userId: string, id: string) {
+    return this.repository.deleteCertificate(userId, id);
+  }
+
+  createAward(userId: string, data: object) {
+    return this.repository.createAward(userId, data as Record<string, unknown>);
+  }
+
+  updateAward(userId: string, id: string, data: object) {
+    return this.repository.updateAward(userId, id, data as Record<string, unknown>);
+  }
+
+  deleteAward(userId: string, id: string) {
+    return this.repository.deleteAward(userId, id);
+  }
+
+  createLanguage(userId: string, data: object) {
+    return this.repository.createLanguage(userId, data as Record<string, unknown>);
+  }
+
+  updateLanguage(userId: string, id: string, data: object) {
+    return this.repository.updateLanguage(userId, id, data as Record<string, unknown>);
+  }
+
+  deleteLanguage(userId: string, id: string) {
+    return this.repository.deleteLanguage(userId, id);
+  }
+
+  createSocialLink(userId: string, data: object) {
+    return this.repository.createSocialLink(userId, data as Record<string, unknown>);
+  }
+
+  updateSocialLink(userId: string, id: string, data: object) {
+    return this.repository.updateSocialLink(userId, id, data as Record<string, unknown>);
+  }
+
+  deleteSocialLink(userId: string, id: string) {
+    return this.repository.deleteSocialLink(userId, id);
+  }
 }

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { join } from 'path';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from '@nestjs/bullmq';
 import { LoggerModule } from 'nestjs-pino';
@@ -21,7 +22,13 @@ import { QUEUE_NAMES } from '@jobos/shared';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [
+        join(__dirname, '../../../.env'),
+        join(__dirname, '../../../.env.local'),
+      ],
+    }),
     LoggerModule.forRoot({
       pinoHttp: {
         transport:

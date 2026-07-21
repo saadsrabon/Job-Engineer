@@ -15,6 +15,11 @@
     "db:push": "pnpm --filter @jobos/database db:push",
     "db:migrate": "pnpm --filter @jobos/database db:migrate",
     "db:seed": "pnpm --filter @jobos/database db:seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
+    "docker:logs": "docker compose logs -f",
+    "env:setup": "node scripts/setup-env.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { SignUpButton } from '@clerk/nextjs';
 import { Button } from '@jobos/ui';
+import { AuthControls } from '@/components/auth-controls';
 import { ChaosSection } from '@/components/chaos-section';
 import { UnifiedSection } from '@/components/unified-section';
 import { PlaceholderSections } from '@/components/placeholder-sections';
@@ -32,14 +33,7 @@ export default function LandingPage() {
       <header className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <span className="text-lg font-semibold">JobOS</span>
-          <div className="flex items-center gap-4">
-            <Link href="http://localhost:3000/sign-in" className="text-sm text-muted-foreground hover:text-foreground">
-              Sign in
-            </Link>
-            <Button asChild>
-              <Link href="http://localhost:3000/sign-up">Get Started</Link>
-            </Button>
-          </div>
+          <AuthControls />
         </div>
       </header>
 
@@ -50,9 +44,11 @@ export default function LandingPage() {
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           JobOS is the operating system for your career — resume, applications, interviews, and offers in one place.
         </p>
-        <Button asChild size="lg" className="mt-8">
-          <Link href="http://localhost:3000/sign-up">Get Started</Link>
-        </Button>
+        <SignUpButton mode="modal">
+          <Button size="lg" className="mt-8">
+            Get Started
+          </Button>
+        </SignUpButton>
       </section>
 
       <ChaosSection />

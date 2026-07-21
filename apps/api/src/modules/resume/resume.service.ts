@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PRISMA } from '../../database/prisma.module';
@@ -58,6 +58,21 @@ export class ResumeService {
   }
 
   async upload(userId: string, file: Express.Multer.File) {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const ALLOWED_MIMES = ['application/pdf'];
+
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      throw new BadRequestException('File too large. Maximum size is 10MB.');
+    }
+
+    if (!ALLOWED_MIMES.includes(file.mimetype)) {
+      throw new BadRequestException('Only PDF files are allowed.');
+    }
+
     const fileName = `${Date.now()}-${file.originalname}`;
     const filePath = path.join(this.uploadDir, fileName);
     fs.writeFileSync(filePath, file.buffer);
