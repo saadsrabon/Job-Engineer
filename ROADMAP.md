@@ -142,7 +142,7 @@ AI Interview Coach agent            ← RAG over questions + user's career libra
 | Landing extension + analytics screenshots | `landing` | Done |
 | Job discovery scraper | `automation` | Planned |
 | Reminder notifications worker | `automation` | Planned |
-| Extension Clerk OAuth | `browser-extension` | Planned |
+| Extension Clerk OAuth | `browser-extension` | Done |
 | Job attachments API/UI | `jobs` | Planned |
 | AI generation history UI | `ai` | Planned |
 | Resume version restore UI | `resume` | Planned |

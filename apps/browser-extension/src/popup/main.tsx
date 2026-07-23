@@ -1,38 +1,58 @@
-import { StrictMode, useEffect, useState } from 'react';
+import {
+  ClerkProvider,
+  SignInButton,
+  UserButton,
+  useAuth,
+} from '@clerk/chrome-extension';
+import { StrictMode, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { fetchAutofillProfile, fetchAiProvider, runJobAssistant, saveJob } from '../lib/api';
+import { assertConfig, CONFIG } from '../lib/config';
+import type { AiProviderInfo, CapturedJob, JobAssistantResult } from '../lib/types';
+import { AssistantResults } from './assistant-results';
+import './popup.css';
 
-interface CapturedJob {
-  title: string;
-  company: string;
-  location?: string;
-  url: string;
-  description?: string;
-}
-
-const DEFAULT_API = 'http://localhost:3001';
-
-function Popup() {
-  const [apiUrl, setApiUrl] = useState(DEFAULT_API);
-  const [token, setToken] = useState('');
+function PopupContent() {
+  const { getToken, isSignedIn } = useAuth();
+  const [apiUrl, setApiUrl] = useState(CONFIG.apiUrl);
   const [job, setJob] = useState<CapturedJob | null>(null);
+  const [assistant, setAssistant] = useState<JobAssistantResult | null>(null);
+  const [providerInfo, setProviderInfo] = useState<AiProviderInfo | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const refreshProfile = useCallback(async () => {
+    const token = await getToken();
+    if (!token) return;
+
+    await chrome.runtime.sendMessage({
+      type: 'REFRESH_AUTOFILL_PROFILE',
+      token,
+      apiUrl,
+    });
+  }, [apiUrl, getToken]);
+
   useEffect(() => {
-    chrome.storage.sync.get(['apiUrl', 'token'], (data) => {
+    chrome.storage.sync.get(['apiUrl'], (data) => {
       if (data.apiUrl) setApiUrl(data.apiUrl);
-      if (data.token) setToken(data.token);
     });
   }, []);
 
+  useEffect(() => {
+    if (!isSignedIn) return;
+    refreshProfile().catch(() => undefined);
+    getToken()
+      .then((token) => (token ? fetchAiProvider(token, apiUrl) : null))
+      .then((info) => info && setProviderInfo(info))
+      .catch(() => undefined);
+  }, [isSignedIn, refreshProfile, getToken, apiUrl]);
+
   const saveSettings = () => {
-    chrome.storage.sync.set({ apiUrl, token });
+    chrome.storage.sync.set({ apiUrl });
     setStatus('Settings saved');
   };
 
-  const captureJob = () => {
-    setLoading(true);
-    setStatus(null);
+  const withActiveTab = (handler: (tabId: number) => void) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0]?.id;
       if (!tabId) {
@@ -40,129 +60,225 @@ function Popup() {
         setLoading(false);
         return;
       }
+      handler(tabId);
+    });
+  };
+
+  const captureJob = () => {
+    setLoading(true);
+    setStatus(null);
+    setAssistant(null);
+    withActiveTab((tabId) => {
       chrome.tabs.sendMessage(tabId, { type: 'CAPTURE_JOB' }, (response) => {
         setLoading(false);
         if (chrome.runtime.lastError) {
-          setStatus('Reload the page after installing the extension.');
+          setStatus('Reload the page after installing or updating the extension.');
           return;
         }
         setJob(response?.job ?? null);
         if (!response?.job) setStatus('Could not detect job details on this page.');
+        else setStatus(`Captured from ${response.job.source || 'page'}`);
       });
     });
   };
 
-  const saveJob = async () => {
-    if (!job || !token.trim()) {
-      setStatus('Add your API token in settings first.');
-      return;
-    }
+  const saveOnly = async () => {
+    if (!job) return;
     setLoading(true);
     setStatus(null);
     try {
-      const res = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/jobs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.trim()}`,
-        },
-        body: JSON.stringify({
-          title: job.title,
-          company: job.company,
-          location: job.location,
-          url: job.url,
-          description: job.description,
-          source: 'browser-extension',
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
+      const token = await getToken();
+      if (!token) throw new Error('Sign in to JobOS first.');
+      await saveJob(job, token, apiUrl);
       setStatus('Saved to JobOS pipeline');
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Failed to save job');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Failed to save job');
     } finally {
       setLoading(false);
     }
   };
 
+  const analyzeAndAssist = async () => {
+    if (!job) return;
+    setLoading(true);
+    setStatus('Saving job and generating AI assist…');
+    setAssistant(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Sign in to JobOS first.');
+      const result = await runJobAssistant(job, token, apiUrl);
+      setAssistant(result);
+      setStatus(
+        result.errors?.length
+          ? `Partial AI assist — ${result.errors.length} step(s) failed`
+          : 'AI assist ready — review suggestions below',
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'AI assist failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const autofillPage = async () => {
+    setLoading(true);
+    setStatus(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Sign in to JobOS first.');
+
+      const profile = await fetchAutofillProfile(token, apiUrl);
+      await chrome.storage.local.set({ autofillProfile: profile });
+
+      withActiveTab((tabId) => {
+        chrome.tabs.sendMessage(
+          tabId,
+          { type: 'AUTOFILL_FORM', profile },
+          (response) => {
+            setLoading(false);
+            if (chrome.runtime.lastError) {
+              setStatus('Reload the application page and try again.');
+              return;
+            }
+            setStatus(
+              response?.filled
+                ? `Auto-filled ${response.filled} field${response.filled === 1 ? '' : 's'} (many ATS forms block extensions)`
+                : 'Auto-fill found no matching fields — use AI assist instead',
+            );
+          },
+        );
+      });
+    } catch (error) {
+      setLoading(false);
+      setStatus(error instanceof Error ? error.message : 'Auto-fill failed');
+    }
+  };
+
+  const copyText = async (label: string) => {
+    if (!assistant) return;
+    const blocks: Record<string, string> = {
+      'Cover letter': assistant.coverLetter,
+      'Networking email': `Subject: ${assistant.email.subject}\n\n${assistant.email.body}`,
+    };
+    const text = blocks[label];
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setStatus(`Copied ${label.toLowerCase()}`);
+  };
+
   return (
-    <div style={{ width: 340, padding: 16, fontFamily: 'system-ui', color: '#fafafa' }}>
-      <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>JobOS</h1>
-      <p style={{ fontSize: 13, color: '#a1a1aa', marginTop: 6 }}>
-        Capture job postings into your pipeline.
-      </p>
-
-      <label style={{ display: 'block', marginTop: 12, fontSize: 12 }}>API URL</label>
-      <input
-        value={apiUrl}
-        onChange={(e) => setApiUrl(e.target.value)}
-        style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 8, border: '1px solid #3f3f46' }}
-      />
-
-      <label style={{ display: 'block', marginTop: 10, fontSize: 12 }}>Bearer token</label>
-      <input
-        type="password"
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        placeholder="Clerk session token"
-        style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 8, border: '1px solid #3f3f46' }}
-      />
-
-      <button
-        type="button"
-        onClick={saveSettings}
-        style={{ marginTop: 8, fontSize: 12, color: '#34d399', background: 'none', border: 'none', cursor: 'pointer' }}
-      >
-        Save settings
-      </button>
-
-      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <button
-          type="button"
-          onClick={captureJob}
-          disabled={loading}
-          style={{
-            flex: 1,
-            padding: '10px 12px',
-            borderRadius: 10,
-            border: '1px solid #3f3f46',
-            background: '#18181b',
-            color: '#fafafa',
-            cursor: 'pointer',
-          }}
-        >
-          Capture page
-        </button>
-        <button
-          type="button"
-          onClick={saveJob}
-          disabled={loading || !job}
-          style={{
-            flex: 1,
-            padding: '10px 12px',
-            borderRadius: 10,
-            border: 'none',
-            background: '#34d399',
-            color: '#052e1f',
-            fontWeight: 600,
-            cursor: job ? 'pointer' : 'not-allowed',
-          }}
-        >
-          Save to JobOS
-        </button>
-      </div>
-
-      {job && (
-        <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: '#18181b', fontSize: 12 }}>
-          <p style={{ margin: 0, fontWeight: 600 }}>{job.title}</p>
-          <p style={{ margin: '4px 0 0', color: '#a1a1aa' }}>
-            {job.company}
-            {job.location ? ` · ${job.location}` : ''}
-          </p>
+    <div className="popup">
+      <header className="popup__header">
+        <div>
+          <h1 className="popup__title">JobOS</h1>
+          <p className="popup__subtitle">Capture jobs and get AI application assist.</p>
         </div>
+        {isSignedIn ? <UserButton /> : null}
+      </header>
+
+      {!isSignedIn ? (
+        <div className="popup__card">
+          <p className="popup__hint">
+            Sign in with your JobOS account. If you already signed in on the web app, reopen this
+            popup to sync your session.
+          </p>
+          <SignInButton mode="modal">
+            <button type="button" className="popup__button popup__button--primary">
+              Sign in to JobOS
+            </button>
+          </SignInButton>
+          <button
+            type="button"
+            className="popup__link"
+            onClick={() => chrome.tabs.create({ url: `${CONFIG.syncHost}/sign-in` })}
+          >
+            Open web sign-in
+          </button>
+        </div>
+      ) : (
+        <>
+          <label className="popup__label">API URL</label>
+          <input
+            className="popup__input"
+            value={apiUrl}
+            onChange={(event) => setApiUrl(event.target.value)}
+          />
+          <button type="button" className="popup__link" onClick={saveSettings}>
+            Save settings
+          </button>
+
+          {providerInfo ? (
+            <p className="popup__provider">
+              AI: {providerInfo.provider}
+              {providerInfo.baseUrlHost ? ` · ${providerInfo.baseUrlHost}` : ''}
+              {providerInfo.defaultModel ? ` · ${providerInfo.defaultModel}` : ''}
+              {!providerInfo.configured ? ' · not configured' : ''}
+            </p>
+          ) : null}
+
+          <div className="popup__actions">
+            <button
+              type="button"
+              className="popup__button"
+              onClick={captureJob}
+              disabled={loading}
+            >
+              Capture page
+            </button>
+            <button
+              type="button"
+              className="popup__button"
+              onClick={saveOnly}
+              disabled={loading || !job}
+            >
+              Save only
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="popup__button popup__button--wide popup__button--primary"
+            onClick={analyzeAndAssist}
+            disabled={loading || !job}
+          >
+            Save & get AI assist
+          </button>
+
+          <button
+            type="button"
+            className="popup__button popup__button--wide popup__button--ghost"
+            onClick={autofillPage}
+            disabled={loading}
+          >
+            Try auto-fill (experimental)
+          </button>
+
+          {job && (
+            <div className="popup__preview">
+              <p className="popup__preview-title">{job.title}</p>
+              <p className="popup__preview-meta">
+                {job.company}
+                {job.location ? ` · ${job.location}` : ''}
+                {job.source ? ` · ${job.source}` : ''}
+              </p>
+            </div>
+          )}
+
+          {assistant ? <AssistantResults result={assistant} onCopy={copyText} /> : null}
+        </>
       )}
 
       {status && (
-        <p style={{ marginTop: 12, fontSize: 12, color: status.includes('Saved') ? '#34d399' : '#fca5a5' }}>
+        <p
+          className={`popup__status ${
+            status.includes('Saved') ||
+            status.includes('ready') ||
+            status.includes('Captured') ||
+            status.includes('Copied')
+              ? 'popup__status--ok'
+              : ''
+          }`}
+        >
           {status}
         </p>
       )}
@@ -170,8 +286,30 @@ function Popup() {
   );
 }
 
+function App() {
+  try {
+    assertConfig();
+  } catch (error) {
+    return (
+      <div className="popup">
+        <p className="popup__status">{error instanceof Error ? error.message : 'Missing config'}</p>
+      </div>
+    );
+  }
+
+  return (
+    <ClerkProvider
+      publishableKey={CONFIG.clerkPublishableKey}
+      syncHost={CONFIG.syncHost}
+      afterSignOutUrl="/"
+    >
+      <PopupContent />
+    </ClerkProvider>
+  );
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Popup />
+    <App />
   </StrictMode>,
 );

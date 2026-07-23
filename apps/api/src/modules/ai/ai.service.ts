@@ -1,12 +1,15 @@
 import {
+  BadGatewayException,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Inject,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { PRISMA } from '../../database/prisma.module';
 import { PrismaClient } from '@jobos/database';
-import { OpenRouterClient } from '@jobos/shared';
+import { AiChatClient, createAiClient, assertAiConfigured } from '@jobos/shared';
 import {
   ATS_SCORER_SYSTEM_PROMPT,
   buildAtsScorerUserPrompt,
@@ -17,6 +20,7 @@ import {
   INTERVIEW_COACH_SYSTEM_PROMPT,
   buildInterviewCoachUserPrompt,
 } from '@jobos/prompts';
+import { truncate } from '@jobos/utils';
 import { CareerLibraryService } from '../career-library/career-library.service';
 import { JobsRepository } from '../jobs/jobs.repository';
 import { InterviewsRepository } from '../interviews/interviews.repository';
@@ -47,17 +51,62 @@ export class AiService {
     @Inject(UsersRepository) private usersRepository: UsersRepository,
   ) {}
 
-  private getClient() {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new BadRequestException('OPENROUTER_API_KEY is not configured');
+  private getClient(agent: string) {
+    try {
+      assertAiConfigured();
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'AI provider is not configured',
+      );
     }
-    return new OpenRouterClient({ apiKey });
+    return createAiClient({ agent });
   }
 
-  private async getCareerJson(userId: string) {
+  private async withAi<T>(agent: string, fn: (client: AiChatClient) => Promise<T>): Promise<T> {
+    try {
+      return await fn(this.getClient(agent));
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw this.toAiHttpException(error);
+    }
+  }
+
+  private toAiHttpException(error: unknown): HttpException {
+    const message = error instanceof Error ? error.message : 'AI request failed';
+    const lower = message.toLowerCase();
+
+    if (lower.includes('402') || lower.includes('credit') || lower.includes('balance')) {
+      return new BadRequestException(message);
+    }
+    if (
+      lower.includes('429') ||
+      lower.includes('concurrency') ||
+      lower.includes('rate limit') ||
+      lower.includes('rate_limited')
+    ) {
+      return new HttpException(message, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    return new BadGatewayException(message);
+  }
+
+  private async getCareerJson(userId: string, maxLength = 12000) {
     const career = await this.careerService.getAll(userId);
-    return JSON.stringify(career, null, 2);
+    return truncate(JSON.stringify(career, null, 2), maxLength);
+  }
+
+  private async persistGeneration(data: {
+    userId: string;
+    agent: string;
+    input: unknown;
+    output: unknown;
+    jobId?: string;
+  }) {
+    try {
+      await this.repository.saveGeneration(data);
+    } catch {
+      // AI result is still returned even if audit logging fails
+    }
   }
 
   async scoreAts(userId: string, jobId: string) {
@@ -65,21 +114,21 @@ export class AiService {
     if (!job) throw new NotFoundException('Job not found');
 
     const careerJson = await this.getCareerJson(userId);
-    const client = this.getClient();
+    const output = await this.withAi('ats-scorer', (client) =>
+      client.extractJson<Record<string, unknown>>([
+        { role: 'system', content: ATS_SCORER_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: buildAtsScorerUserPrompt(careerJson, {
+            title: job.title,
+            company: job.company,
+            description: job.description,
+          }),
+        },
+      ]),
+    );
 
-    const output = await client.extractJson<Record<string, unknown>>([
-      { role: 'system', content: ATS_SCORER_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: buildAtsScorerUserPrompt(careerJson, {
-          title: job.title,
-          company: job.company,
-          description: job.description,
-        }),
-      },
-    ]);
-
-    await this.repository.saveGeneration({
+    await this.persistGeneration({
       userId,
       agent: 'ats-scorer',
       jobId,
@@ -94,21 +143,22 @@ export class AiService {
     const job = await this.jobsRepository.findById(userId, jobId);
     if (!job) throw new NotFoundException('Job not found');
 
-    const client = this.getClient();
-    const output = await client.extractJson<Record<string, unknown>>([
-      { role: 'system', content: JOB_ANALYZER_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: buildJobAnalyzerUserPrompt({
-          title: job.title,
-          company: job.company,
-          description: job.description,
-          location: job.location,
-        }),
-      },
-    ]);
+    const output = await this.withAi('job-analyzer', (client) =>
+      client.extractJson<Record<string, unknown>>([
+        { role: 'system', content: JOB_ANALYZER_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: buildJobAnalyzerUserPrompt({
+            title: job.title,
+            company: job.company,
+            description: job.description,
+            location: job.location,
+          }),
+        },
+      ]),
+    );
 
-    await this.repository.saveGeneration({
+    await this.persistGeneration({
       userId,
       agent: 'job-analyzer',
       jobId,
@@ -125,22 +175,23 @@ export class AiService {
 
     const user = await this.usersRepository.findById(userId);
     const careerJson = await this.getCareerJson(userId);
-    const client = this.getClient();
 
-    const letter = await client.chat([
-      { role: 'system', content: COVER_LETTER_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: buildCoverLetterUserPrompt(
-          careerJson,
-          { title: job.title, company: job.company, description: job.description },
-          user?.name,
-        ),
-      },
-    ]);
+    const letter = await this.withAi('cover-letter', (client) =>
+      client.chat([
+        { role: 'system', content: COVER_LETTER_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: buildCoverLetterUserPrompt(
+            careerJson,
+            { title: job.title, company: job.company, description: job.description },
+            user?.name,
+          ),
+        },
+      ]),
+    );
 
     const output = { letter };
-    await this.repository.saveGeneration({
+    await this.persistGeneration({
       userId,
       agent: 'cover-letter',
       jobId,
@@ -156,21 +207,21 @@ export class AiService {
     if (!question) throw new NotFoundException('Question not found');
 
     const careerJson = await this.getCareerJson(userId);
-    const client = this.getClient();
+    const output = await this.withAi('interview-coach', (client) =>
+      client.extractJson<Record<string, unknown>>([
+        { role: 'system', content: INTERVIEW_COACH_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: buildInterviewCoachUserPrompt(
+            question.question,
+            careerJson,
+            question.company?.name,
+          ),
+        },
+      ]),
+    );
 
-    const output = await client.extractJson<Record<string, unknown>>([
-      { role: 'system', content: INTERVIEW_COACH_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: buildInterviewCoachUserPrompt(
-          question.question,
-          careerJson,
-          question.company?.name,
-        ),
-      },
-    ]);
-
-    await this.repository.saveGeneration({
+    await this.persistGeneration({
       userId,
       agent: 'interview-coach',
       input: { questionId },

@@ -53,10 +53,15 @@ pnpm dev
 Run individual services:
 
 ```bash
+pnpm dev              # All apps + package watchers (recommended)
+pnpm dev:all          # All apps only (web, api, worker, landing, docs, extension)
+pnpm dev:stack        # Core stack: web + api + worker
 pnpm dev:web
 pnpm dev:api
 pnpm dev:worker
 pnpm dev:landing
+pnpm dev:docs
+pnpm dev:extension
 ```
 
 ## Production

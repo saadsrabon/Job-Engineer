@@ -4,7 +4,8 @@ import { Worker } from 'bullmq';
 import { prisma, ParseJobStatus, importParsedCareerData } from '@jobos/database';
 import {
   QUEUE_NAMES,
-  OpenRouterClient,
+  assertAiConfigured,
+  createAiClient,
   resolveResumeParserMaxTokens,
 } from '@jobos/shared';
 import { resolveUploadFilePath } from '@jobos/shared/paths';
@@ -41,25 +42,26 @@ async function parseResume(jobId: string, userId: string, filePath: string) {
       );
     }
 
-    if (!process.env.OPENROUTER_API_KEY) {
+    try {
+      assertAiConfigured();
+    } catch {
       throw new Error(
-        'OPENROUTER_API_KEY is not set. Add it to .env to enable resume parsing.',
+        'AI provider is not configured. Set AI_API_KEY (or OPENROUTER_API_KEY) in .env.',
       );
     }
 
     const maxTokens = resolveResumeParserMaxTokens(
-      process.env.OPENROUTER_RESUME_PARSER_MAX_TOKENS,
+      process.env.AI_MAX_TOKENS_RESUME_PARSER ||
+        process.env.OPENROUTER_RESUME_PARSER_MAX_TOKENS,
     );
 
-    const resumeForParsing =
-      maxTokens <= 256
-        ? truncateResumeMarkdown(resumeMarkdown, 2000)
-        : resumeMarkdown;
+    const resumeForParsing = truncateResumeMarkdown(resumeMarkdown, 12000);
 
-    const client = new OpenRouterClient({
-      apiKey: process.env.OPENROUTER_API_KEY,
+    const client = createAiClient({
       agent: 'resume-parser',
-      model: process.env.OPENROUTER_RESUME_PARSER_MODEL,
+      ...(process.env.AI_MODEL_RESUME_PARSER?.trim()
+        ? { model: process.env.AI_MODEL_RESUME_PARSER.trim() }
+        : {}),
       maxTokens,
     });
 
@@ -97,9 +99,7 @@ async function parseResume(jobId: string, userId: string, filePath: string) {
     if (message.includes('402') || message.includes('credits insufficient')) {
       message =
         `Local PDF extraction succeeded, but AI structuring failed: ${message} ` +
-        'Add OpenRouter credits and re-upload your resume, set OPENROUTER_RESUME_PARSER_MODEL to a cheaper model, ' +
-        'or lower OPENROUTER_RESUME_PARSER_MAX_TOKENS (currently ' +
-        `${resolveResumeParserMaxTokens(process.env.OPENROUTER_RESUME_PARSER_MAX_TOKENS)}).`;
+        'Add credits to your AI provider, choose a cheaper model, or lower AI_MAX_TOKENS_RESUME_PARSER.';
     }
     await prisma.resumeParseJob.update({
       where: { id: jobId },
@@ -127,9 +127,11 @@ worker.on('completed', (job) => console.log(`Job ${job.id} completed`));
 worker.on('failed', (job, err) => console.error(`Job ${job?.id} failed:`, err));
 
 console.log('JobOS Worker started — listening for resume parse jobs');
-if (!process.env.OPENROUTER_API_KEY) {
+try {
+  assertAiConfigured();
+} catch {
   console.warn(
-    'OPENROUTER_API_KEY is not set. Add it to root .env and restart the worker.',
+    'AI provider is not configured. Set AI_API_KEY (or OPENROUTER_API_KEY) in root .env and restart the worker.',
   );
 }
 

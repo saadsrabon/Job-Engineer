@@ -3,15 +3,15 @@ export const ATS_SCORER_SYSTEM_PROMPT = `You are an ATS (Applicant Tracking Syst
 Return ONLY valid JSON with this exact shape:
 {
   "score": number (0-100),
-  "summary": string (2-3 sentences),
-  "matchedSkills": string[],
-  "missingSkills": string[],
-  "matchedExperience": string[],
-  "gaps": string[],
-  "recommendations": string[]
+  "summary": string (max 2 sentences),
+  "matchedSkills": string[] (max 5),
+  "missingSkills": string[] (max 5),
+  "matchedExperience": string[] (max 5),
+  "gaps": string[] (max 5),
+  "recommendations": string[] (max 5)
 }
 
-Be specific and actionable. Base scores on keyword overlap, relevant experience, and skill alignment — not fluff.`;
+Be specific and actionable. Keep arrays short. No markdown fences.`;
 
 export function buildAtsScorerUserPrompt(careerJson: string, job: { title: string; company: string; description: string | null }) {
   return `## Job Posting

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from '@jobos/shared';
@@ -71,6 +71,30 @@ export class ResumeService {
 
   listVersions(userId: string) {
     return this.repository.listVersions(userId);
+  }
+
+  async deleteParseJob(userId: string, id: string) {
+    const job = await this.repository.findParseJob(userId, id);
+    if (!job) throw new NotFoundException('Parse job not found');
+
+    if (fs.existsSync(job.filePath)) {
+      try {
+        fs.unlinkSync(job.filePath);
+      } catch {
+        // file may already be removed
+      }
+    }
+
+    await this.repository.deleteParseJob(id);
+    return { id };
+  }
+
+  async deleteVersion(userId: string, id: string) {
+    const version = await this.repository.findVersion(userId, id);
+    if (!version) throw new NotFoundException('Resume version not found');
+
+    await this.repository.deleteVersion(id);
+    return { id };
   }
 
   async exportPdf(userId: string) {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApiClient } from '@/lib/api';
 import {
@@ -16,9 +16,14 @@ import {
   Input,
   Label,
   Skeleton,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '@jobos/ui';
 import type { AtsScoreResult, JobAnalyzerResult, JobSuggestedQuestions, InterviewRoundItem } from '@jobos/types';
-import { ArrowLeft, X, Sparkles, MessageSquare, Calendar } from 'lucide-react';
+import { ArrowLeft, X, Sparkles, MessageSquare, Calendar, Pencil, Trash2 } from 'lucide-react';
 
 interface JobTag {
   tag: { id: string; name: string; color: string };
@@ -45,13 +50,24 @@ interface Tag {
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const api = useApiClient();
   const queryClient = useQueryClient();
   const [note, setNote] = useState('');
   const [newTagName, setNewTagName] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    company: '',
+    location: '',
+    url: '',
+    description: '',
+  });
   const [atsResult, setAtsResult] = useState<AtsScoreResult | null>(null);
   const [jobAnalysis, setJobAnalysis] = useState<JobAnalyzerResult | null>(null);
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
+  const [coverLetterError, setCoverLetterError] = useState<string | null>(null);
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
   const [roundTitle, setRoundTitle] = useState('');
   const [roundDate, setRoundDate] = useState('');
@@ -132,7 +148,12 @@ export default function JobDetailPage() {
 
   const generateCoverLetter = useMutation({
     mutationFn: () => api.post<{ letter: string }>('/ai/cover-letter', { jobId: id }),
-    onSuccess: (data) => setCoverLetter(data.letter),
+    onSuccess: (data) => {
+      setCoverLetter(data.letter);
+      setCoverLetterError(null);
+    },
+    onError: (err) =>
+      setCoverLetterError(err instanceof Error ? err.message : 'Cover letter generation failed'),
   });
 
   const analyzeJob = useMutation({
@@ -166,6 +187,46 @@ export default function JobDetailPage() {
     mutationFn: (tagId: string) => api.delete(`/crm/jobs/${id}/tags/${tagId}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['job', id] }),
   });
+
+  const updateJob = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.patch(`/jobs/${id}`, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setEditOpen(false);
+    },
+  });
+
+  const deleteJob = useMutation({
+    mutationFn: () => api.delete(`/jobs/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      router.push('/dashboard/jobs');
+    },
+  });
+
+  const openEditDialog = () => {
+    if (!job) return;
+    setEditForm({
+      title: job.title,
+      company: job.company,
+      location: job.location ?? '',
+      url: job.url ?? '',
+      description: job.description ?? '',
+    });
+    setEditOpen(true);
+  };
+
+  const handleUpdateJob = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    updateJob.mutate({
+      title: editForm.title.trim(),
+      company: editForm.company.trim(),
+      location: editForm.location.trim() || undefined,
+      url: editForm.url.trim() || undefined,
+      description: editForm.description.trim() || undefined,
+    });
+  };
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (!job) return <p>Job not found</p>;
@@ -201,8 +262,42 @@ export default function JobDetailPage() {
             </a>
           )}
         </div>
-        <Badge>{job.stage}</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge>{job.stage}</Badge>
+          <Button size="sm" variant="outline" className="gap-1" onClick={openEditDialog}>
+            <Pencil className="h-3 w-3" />
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-destructive hover:text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-3 w-3" />
+            Delete
+          </Button>
+        </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Job Description</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {job.description ? (
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{job.description}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No description yet.{' '}
+              <button type="button" className="text-primary hover:underline" onClick={openEditDialog}>
+                Add one
+              </button>{' '}
+              to enable AI job analysis.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -331,6 +426,11 @@ export default function JobDetailPage() {
                 </p>
               )}
             </div>
+          )}
+          {coverLetterError && (
+            <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              {coverLetterError}
+            </p>
           )}
           {coverLetter && (
             <div className="rounded-xl border border-border p-4">
@@ -561,6 +661,93 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Job</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateJob} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Job Title</Label>
+              <Input
+                id="edit-title"
+                value={editForm.title}
+                onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-company">Company</Label>
+              <Input
+                id="edit-company"
+                value={editForm.company}
+                onChange={(e) => setEditForm((f) => ({ ...f, company: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-location">Location</Label>
+              <Input
+                id="edit-location"
+                value={editForm.location}
+                onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-url">Job URL</Label>
+              <Input
+                id="edit-url"
+                type="url"
+                value={editForm.url}
+                onChange={(e) => setEditForm((f) => ({ ...f, url: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                rows={6}
+                placeholder="Paste the job description for AI analysis..."
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateJob.isPending}>
+                {updateJob.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Job</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Delete <span className="font-medium text-foreground">{job.title}</span> at{' '}
+            {job.company}? This removes notes, tags, and interview rounds for this job.
+          </p>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteJob.isPending}
+              onClick={() => deleteJob.mutate()}
+            >
+              {deleteJob.isPending ? 'Deleting...' : 'Delete Job'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

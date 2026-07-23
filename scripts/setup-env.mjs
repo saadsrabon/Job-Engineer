@@ -67,4 +67,13 @@ const databaseEnv = [
 ].join('\n');
 writeFileSync(resolve(root, 'packages/database/.env'), databaseEnv);
 
-console.log('Synced apps/web/.env.local, apps/landing/.env.local, and packages/database/.env from root .env');
+const extensionEnv = [
+  '# Auto-generated from root .env — run: pnpm env:setup',
+  `VITE_CLERK_PUBLISHABLE_KEY=${get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')}`,
+  `VITE_CLERK_SYNC_HOST=${get('NEXT_PUBLIC_WEB_URL') || 'http://localhost:3000'}`,
+  `VITE_API_URL=${get('NEXT_PUBLIC_API_URL') || 'http://localhost:3001'}`,
+  '',
+].join('\n');
+writeFileSync(resolve(root, 'apps/browser-extension/.env'), extensionEnv);
+
+console.log('Synced apps/web/.env.local, apps/landing/.env.local, packages/database/.env, and apps/browser-extension/.env from root .env');

@@ -1,16 +1,17 @@
 {
   "manifest_version": 3,
   "name": "JobOS Assistant",
-  "version": "0.1.0",
-  "description": "Capture jobs from any posting page into your JobOS pipeline",
+  "version": "0.2.0",
+  "description": "Capture jobs, save to your pipeline, and auto-fill applications from your Career Library",
   "action": {
     "default_popup": "popup.html",
     "default_title": "JobOS"
   },
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting", "cookies"],
   "host_permissions": [
     "http://localhost:3000/*",
     "http://localhost:3001/*",
+    "https://*.clerk.accounts.dev/*",
     "https://*/*",
     "http://*/*"
   ],

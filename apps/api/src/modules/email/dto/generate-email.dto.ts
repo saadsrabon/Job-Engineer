@@ -1,7 +1,9 @@
-import { IsIn, IsUUID } from 'class-validator';
+import { IsIn, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class GenerateEmailDto {
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
   jobId!: string;
 
   @IsIn(['follow-up', 'thank-you', 'networking'])

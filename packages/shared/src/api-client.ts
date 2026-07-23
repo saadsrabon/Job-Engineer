@@ -29,7 +29,9 @@ export class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || `API error: ${response.status}`);
+      const message = error.message;
+      const text = Array.isArray(message) ? message.join(', ') : message || `API error: ${response.status}`;
+      throw new Error(text);
     }
 
     const json = (await response.json()) as ApiResponse<T>;

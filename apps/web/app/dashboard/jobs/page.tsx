@@ -30,7 +30,7 @@ import {
   Label,
   Skeleton,
 } from '@jobos/ui';
-import { Plus, LayoutGrid, Table2 } from 'lucide-react';
+import { Plus, LayoutGrid, Table2, Pencil, Trash2 } from 'lucide-react';
 import { useUiStore } from '@/lib/store';
 import { cn } from '@jobos/ui';
 
@@ -127,6 +127,11 @@ export default function JobsPage() {
     },
   });
 
+  const deleteJob = useMutation({
+    mutationFn: (jobId: string) => api.delete(`/jobs/${jobId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jobs'] }),
+  });
+
   const handleDragStart = (event: DragStartEvent) => {
     const job = jobs?.find((j) => j.id === event.active.id);
     if (job) setActiveJob(job);
@@ -221,6 +226,7 @@ export default function JobsPage() {
                   <th className="p-4 text-left font-medium">Company</th>
                   <th className="p-4 text-left font-medium">Stage</th>
                   <th className="p-4 text-left font-medium">Updated</th>
+                  <th className="p-4 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -237,6 +243,29 @@ export default function JobsPage() {
                     </td>
                     <td className="p-4 text-muted-foreground">
                       {new Date(job.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" asChild>
+                          <Link href={`/dashboard/jobs/${job.id}`} aria-label="Edit job">
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          aria-label="Delete job"
+                          disabled={deleteJob.isPending}
+                          onClick={() => {
+                            if (window.confirm(`Delete "${job.title}" at ${job.company}?`)) {
+                              deleteJob.mutate(job.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

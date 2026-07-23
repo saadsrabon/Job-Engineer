@@ -6,7 +6,7 @@ Return ONLY valid JSON:
   "body": string
 }
 
-Keep emails under 200 words. Be specific to the job and candidate profile. No placeholder brackets.`;
+Keep the body under 150 words. No markdown fences. No placeholder brackets.`;
 
 export function buildEmailWriterUserPrompt(
   template: string,

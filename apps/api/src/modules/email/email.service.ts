@@ -1,13 +1,17 @@
 import {
   Injectable,
   Inject,
+  BadGatewayException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import { PRISMA } from '../../database/prisma.module';
 import { PrismaClient } from '@jobos/database';
-import { OpenRouterClient } from '@jobos/shared';
+import { createAiClient, assertAiConfigured } from '@jobos/shared';
 import { EMAIL_WRITER_SYSTEM_PROMPT, buildEmailWriterUserPrompt } from '@jobos/prompts';
+import { truncate } from '@jobos/utils';
 import { CareerLibraryService } from '../career-library/career-library.service';
 import { JobsRepository } from '../jobs/jobs.repository';
 import { UsersRepository } from '../users/users.repository';
@@ -53,35 +57,63 @@ export class EmailService {
     const job = await this.jobsRepository.findById(userId, jobId);
     if (!job) throw new NotFoundException('Job not found');
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new BadRequestException('OPENROUTER_API_KEY is not configured');
+    try {
+      assertAiConfigured();
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'AI provider is not configured',
+      );
+    }
 
     const [career, user] = await Promise.all([
       this.careerService.getAll(userId),
       this.usersRepository.findById(userId),
     ]);
 
-    const client = new OpenRouterClient({ apiKey, agent: 'email-writer' });
-    const output = await client.extractJson<{ subject: string; body: string }>([
-      { role: 'system', content: EMAIL_WRITER_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: buildEmailWriterUserPrompt(
-          template.name,
-          JSON.stringify(career, null, 2),
-          { title: job.title, company: job.company, description: job.description },
-          user?.name,
-        ),
-      },
-    ]);
+    const client = createAiClient({ agent: 'email-writer' });
+    let output: { subject: string; body: string };
+    try {
+      output = await client.extractJson<{ subject: string; body: string }>([
+        { role: 'system', content: EMAIL_WRITER_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: buildEmailWriterUserPrompt(
+            template.name,
+            truncate(JSON.stringify(career, null, 2), 12000),
+            { title: job.title, company: job.company, description: job.description },
+            user?.name,
+          ),
+        },
+      ]);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      const message = error instanceof Error ? error.message : 'AI request failed';
+      const lower = message.toLowerCase();
+      if (lower.includes('402') || lower.includes('credit') || lower.includes('balance')) {
+        throw new BadRequestException(message);
+      }
+      if (
+        lower.includes('429') ||
+        lower.includes('concurrency') ||
+        lower.includes('rate limit') ||
+        lower.includes('rate_limited')
+      ) {
+        throw new HttpException(message, HttpStatus.TOO_MANY_REQUESTS);
+      }
+      throw new BadGatewayException(message);
+    }
 
-    await this.repository.saveGeneration({
-      userId,
-      agent: 'email-writer',
-      jobId,
-      input: { jobId, templateId },
-      output,
-    });
+    try {
+      await this.repository.saveGeneration({
+        userId,
+        agent: 'email-writer',
+        jobId,
+        input: { jobId, templateId },
+        output,
+      });
+    } catch {
+      // AI result is still returned even if audit logging fails
+    }
 
     return { template, ...output };
   }

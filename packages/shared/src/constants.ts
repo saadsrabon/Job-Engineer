@@ -13,7 +13,12 @@ export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 export const DEFAULT_RESUME_PARSER_MAX_TOKENS = 128;
 
 export const DEFAULT_MAX_TOKENS: Record<string, number> = {
-  'resume-parser': DEFAULT_RESUME_PARSER_MAX_TOKENS,
+  'resume-parser': 4096,
+  'cover-letter': 2048,
+  'job-analyzer': 2048,
+  'ats-scorer': 2048,
+  'interview-coach': 2048,
+  'email-writer': 2048,
 };
 
 export const DEFAULT_MODELS: Record<string, string> = {
@@ -28,6 +33,3 @@ export const DEFAULT_MODELS: Record<string, string> = {
   'skill-gap-analyzer': 'openai/gpt-4.1-mini',
   'career-advisor': 'anthropic/claude-3.5-sonnet',
 };
-
-export * from './api-client';
-export * from './openrouter';

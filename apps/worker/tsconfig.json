@@ -6,7 +6,12 @@
     "module": "Node16",
     "moduleResolution": "node16",
     "target": "ES2022",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "@jobos/shared": ["../../packages/shared/dist/index"],
+      "@jobos/shared/paths": ["../../packages/shared/dist/paths"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

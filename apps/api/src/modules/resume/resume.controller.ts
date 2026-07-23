@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   UseGuards,
   UseInterceptors,
@@ -47,6 +48,16 @@ export class ResumeController {
   @Get('versions')
   listVersions(@CurrentUser() user: User) {
     return this.service.listVersions(user.id).then((data) => ({ data }));
+  }
+
+  @Delete('parse-jobs/:id')
+  deleteParseJob(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.deleteParseJob(user.id, id).then((data) => ({ data }));
+  }
+
+  @Delete('versions/:id')
+  deleteVersion(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.deleteVersion(user.id, id).then((data) => ({ data }));
   }
 
   @Post('export')

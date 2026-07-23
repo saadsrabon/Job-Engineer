@@ -1,11 +1,16 @@
-import { IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
+/** Prisma entity ids use cuid(), not UUID. */
 export class JobAiDto {
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
   jobId!: string;
 }
 
 export class CoachAnswerDto {
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
   questionId!: string;
 }

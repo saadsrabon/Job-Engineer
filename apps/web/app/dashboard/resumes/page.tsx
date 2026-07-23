@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '@/lib/api';
 import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } from '@jobos/ui';
-import { Upload, FileText, CheckCircle, XCircle, Loader2, Download } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, Loader2, Download, Trash2 } from 'lucide-react';
 
 interface ParseJob {
   id: string;
@@ -13,6 +13,12 @@ interface ParseJob {
   error: string | null;
   createdAt: string;
   completedAt: string | null;
+}
+
+interface ResumeVersion {
+  id: string;
+  name: string;
+  createdAt: string;
 }
 
 export default function ResumesPage() {
@@ -30,7 +36,20 @@ export default function ResumesPage() {
       return result;
     },
     onError: (err) => setExportError(err instanceof Error ? err.message : 'Export failed'),
-    onSuccess: () => setExportError(null),
+    onSuccess: () => {
+      setExportError(null);
+      queryClient.invalidateQueries({ queryKey: ['resume-versions'] });
+    },
+  });
+
+  const deleteParseJob = useMutation({
+    mutationFn: (id: string) => api.delete(`/resume/parse-jobs/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['parse-jobs'] }),
+  });
+
+  const deleteVersion = useMutation({
+    mutationFn: (id: string) => api.delete(`/resume/versions/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resume-versions'] }),
   });
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -44,6 +63,11 @@ export default function ResumesPage() {
       );
       return hasPending ? 3000 : false;
     },
+  });
+
+  const { data: versions, isLoading: versionsLoading } = useQuery({
+    queryKey: ['resume-versions'],
+    queryFn: () => api.get<ResumeVersion[]>('/resume/versions'),
   });
 
   const upload = async (file: File) => {
@@ -134,6 +158,7 @@ export default function ResumesPage() {
           )}
           <p className="mt-2 text-xs text-muted-foreground">
             PDF only, max 10MB. Parsed data imports into Career Library when the worker is running.
+            Edit parsed content in Career Library.
           </p>
         </CardContent>
       </Card>
@@ -150,31 +175,92 @@ export default function ResumesPage() {
               {jobs.map((job) => (
                 <li
                   key={job.id}
-                  className="flex items-center justify-between rounded-xl border border-border p-4"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border p-4"
                 >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{job.fileName}</p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{job.fileName}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(job.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2">
-                      {statusIcon(job.status)}
-                      <Badge variant="outline">{job.status}</Badge>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2">
+                        {statusIcon(job.status)}
+                        <Badge variant="outline">{job.status}</Badge>
+                      </div>
+                      {job.status === 'Failed' && job.error && (
+                        <p className="max-w-xs text-right text-xs text-destructive">{job.error}</p>
+                      )}
                     </div>
-                    {job.status === 'Failed' && job.error && (
-                      <p className="max-w-xs text-right text-xs text-destructive">{job.error}</p>
-                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      aria-label="Delete parse job"
+                      disabled={deleteParseJob.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Remove "${job.fileName}" from parse history?`)) {
+                          deleteParseJob.mutate(job.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">No uploads yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Exported PDFs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {versionsLoading ? (
+            <Skeleton className="h-20 w-full" />
+          ) : versions?.length ? (
+            <ul className="space-y-3">
+              {versions.map((version) => (
+                <li
+                  key={version.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border p-4"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{version.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(version.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    aria-label="Delete exported version"
+                    disabled={deleteVersion.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Delete export "${version.name}"?`)) {
+                        deleteVersion.mutate(version.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No exports yet. Use Export PDF to generate a resume from your Career Library.
+            </p>
           )}
         </CardContent>
       </Card>

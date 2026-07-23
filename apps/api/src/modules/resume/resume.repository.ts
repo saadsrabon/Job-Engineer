@@ -46,6 +46,18 @@ export class ResumeRepository {
     });
   }
 
+  findVersion(userId: string, id: string) {
+    return this.prisma.resumeVersion.findFirst({ where: { id, userId } });
+  }
+
+  deleteParseJob(id: string) {
+    return this.prisma.resumeParseJob.delete({ where: { id } });
+  }
+
+  deleteVersion(id: string) {
+    return this.prisma.resumeVersion.delete({ where: { id } });
+  }
+
   createVersion(userId: string, data: { name: string; snapshot: Record<string, unknown> }) {
     return this.prisma.resumeVersion.create({
       data: {

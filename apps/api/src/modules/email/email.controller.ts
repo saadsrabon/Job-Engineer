@@ -19,7 +19,8 @@ export class EmailModuleController {
   }
 
   @Post('generate')
-  generate(@CurrentUser() user: User, @Body() dto: GenerateEmailDto) {
-    return this.service.generate(user.id, dto.jobId, dto.templateId).then((data) => ({ data }));
+  async generate(@CurrentUser() user: User, @Body() dto: GenerateEmailDto) {
+    const data = await this.service.generate(user.id, dto.jobId, dto.templateId);
+    return { data };
   }
 }

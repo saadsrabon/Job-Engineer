@@ -4,13 +4,15 @@ Return ONLY valid JSON with this exact shape:
 {
   "title": string,
   "seniority": string,
-  "requiredSkills": string[],
-  "preferredSkills": string[],
-  "responsibilities": string[],
-  "qualifications": string[],
-  "keywords": string[],
-  "summary": string
-}`;
+  "requiredSkills": string[] (max 8),
+  "preferredSkills": string[] (max 8),
+  "responsibilities": string[] (max 6),
+  "qualifications": string[] (max 6),
+  "keywords": string[] (max 10),
+  "summary": string (max 2 sentences)
+}
+
+Keep arrays concise. No markdown fences.`;
 
 export function buildJobAnalyzerUserPrompt(job: {
   title: string;

@@ -7,7 +7,9 @@
     "declaration": false,
     "declarationMap": false,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@jobos/shared": ["../../packages/shared/dist/index"],
+      "@jobos/shared/paths": ["../../packages/shared/dist/paths"]
     }
   },
   "include": ["src/**/*"],

@@ -1,11 +1,9 @@
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { findMonorepoRoot } from '@jobos/shared/paths';
 
-const root = join(__dirname, '../../..');
-
-for (const file of ['.env', '.env.local']) {
-  const path = join(root, file);
-  if (!existsSync(path)) continue;
+function loadEnvFile(path: string, override = false) {
+  if (!existsSync(path)) return;
 
   for (const line of readFileSync(path, 'utf8').split('\n')) {
     const trimmed = line.trim();
@@ -14,8 +12,15 @@ for (const file of ['.env', '.env.local']) {
     if (eq <= 0) continue;
     const key = trimmed.slice(0, eq).trim();
     const value = trimmed.slice(eq + 1).trim();
-    if (!process.env[key]) {
+    if (override || !process.env[key]) {
       process.env[key] = value;
     }
   }
 }
+
+const rootFromFile = resolve(__dirname, '../../..');
+const rootFromCwd = findMonorepoRoot();
+const root = existsSync(join(rootFromFile, '.env')) ? rootFromFile : rootFromCwd;
+
+loadEnvFile(join(root, '.env'));
+loadEnvFile(join(root, '.env.local'), true);
