@@ -22,11 +22,7 @@ export function AuthControls() {
         <Button variant="ghost" size="sm" asChild>
           <a href={webAppPaths.dashboard}>Dashboard</a>
         </Button>
-        <UserButton afterSignOutUrl="/">
-          <UserButton.MenuItems>
-            <UserButton.Link label="Open dashboard" href={webAppPaths.dashboard} />
-          </UserButton.MenuItems>
-        </UserButton>
+        <UserButton afterSignOutUrl="/" />
       </SignedIn>
     </div>
   );
