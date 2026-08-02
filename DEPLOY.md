@@ -72,3 +72,23 @@ In [Clerk Dashboard](https://dashboard.clerk.com) → your application:
 ## Later: API
 
 When the API is hosted, set `NEXT_PUBLIC_API_URL` on the web project to the public API base URL, redeploy web, and configure API CORS with `NEXT_PUBLIC_WEB_URL` and `NEXT_PUBLIC_LANDING_URL`.
+
+## Troubleshooting
+
+### `500` / `MIDDLEWARE_INVOCATION_FAILED`
+
+Clerk middleware runs on every non-static request. This error almost always means middleware threw before your page rendered.
+
+1. **Clerk env vars on Vercel** (both landing and web projects, **Production** and **Preview**):
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — must start with `pk_`
+   - `CLERK_SECRET_KEY` — must start with `sk_` (required for middleware; publishable key alone is not enough)
+2. **Redeploy** after adding or changing env vars (Deployments → ⋮ → Redeploy).
+3. **Clerk Dashboard** → your app → **Domains**: add each Vercel host (`https://….vercel.app`). Use **Production** keys from Clerk for production deployments, not Development-only keys if your instance requires it.
+4. **Which project failed?** Open Vercel → Project → **Logs** / **Functions** and filter around the error ID. Landing only needs the three vars in step 2; web needs the full set from section 3 above.
+5. After pushing middleware matcher fixes, trigger a new deploy from Git.
+
+### pnpm “Ignored build scripts” warning
+
+pnpm 10 does not run dependency `postinstall` scripts unless they are listed in `pnpm.onlyBuiltDependencies` (see root [`package.json`](package.json)). If Vercel logs show that warning, commit the repo’s `onlyBuiltDependencies` list and redeploy so **sharp** and **@clerk/shared** can install correctly.
+
+If logs show `Clerk: auth() was called but Clerk can't detect usage of clerkMiddleware()`, a request hit a route the matcher skipped (often a bad static asset path). The updated matcher in `middleware.ts` reduces that case.
