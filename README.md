@@ -68,6 +68,8 @@ pnpm dev:extension
 
 For production, use managed Postgres (Neon, RDS, etc.) and Redis (Upstash, ElastiCache, etc.) by setting `DATABASE_URL` and `REDIS_URL` in your deployment environment. The Docker Compose file is intended for **local development only**.
 
+**Frontend (Vercel):** See [DEPLOY.md](./DEPLOY.md) for deploying `@jobos/landing` and `@jobos/web`.
+
 ## Packages
 
 - `@jobos/ui` — Design system

@@ -15,14 +15,16 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3000';
+
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
         <ClerkProvider
-          signInUrl="http://localhost:3000/sign-in"
-          signUpUrl="http://localhost:3000/sign-up"
-          afterSignInUrl="http://localhost:3000/dashboard"
-          afterSignUpUrl="http://localhost:3000/onboarding"
+          signInUrl={`${webUrl}/sign-in`}
+          signUpUrl={`${webUrl}/sign-up`}
+          afterSignInUrl={`${webUrl}/dashboard`}
+          afterSignUpUrl={`${webUrl}/onboarding`}
         >
           {children}
         </ClerkProvider>
