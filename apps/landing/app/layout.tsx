@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import '@jobos/ui/globals.css';
 import 'lenis/dist/lenis.css';
 import './landing.css';
+import { webAppPaths } from '@/lib/web-app';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -15,16 +16,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3000';
-
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
         <ClerkProvider
-          signInUrl={`${webUrl}/sign-in`}
-          signUpUrl={`${webUrl}/sign-up`}
-          afterSignInUrl={`${webUrl}/dashboard`}
-          afterSignUpUrl={`${webUrl}/onboarding`}
+          signInUrl={webAppPaths.signIn}
+          signUpUrl={webAppPaths.signUp}
+          afterSignInUrl={webAppPaths.dashboard}
+          afterSignUpUrl={webAppPaths.onboarding}
         >
           {children}
         </ClerkProvider>

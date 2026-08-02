@@ -21,15 +21,19 @@ Vercel deploys from Git. Push this repo to GitHub if it is not there already.
 2. **Project name:** e.g. `jobos-landing`
 3. **Framework:** Next.js
 4. **Root Directory:** `apps/landing`
-5. **Environment variables** (Production and Preview):
+5. **Environment variables** (Production **and** Preview — check both boxes when saving):
 
    | Name                                | Value                                      |
    | ----------------------------------- | ------------------------------------------ |
-   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys                 |
-   | `CLERK_SECRET_KEY`                  | Clerk Dashboard → API Keys                 |
-   | `NEXT_PUBLIC_WEB_URL`               | Web Vercel URL (step 3); redeploy after    |
+   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → **API Keys** → Publishable key (`pk_test_…` or `pk_live_…`) |
+   | `CLERK_SECRET_KEY`                  | Clerk Dashboard → **API Keys** → Secret key (`sk_test_…` or `sk_live_…`) |
+   | `NEXT_PUBLIC_WEB_URL`               | **Required for auth links.** Full web app URL, e.g. `https://job-engineer-web.vercel.app` (no trailing slash). Landing CTAs and Clerk redirects send users here for sign-in, sign-up, dashboard, and onboarding. Redeploy landing after web exists. |
 
-6. Deploy and copy the production URL.
+   Copy the names **exactly** (including `NEXT_PUBLIC_`). Values must not be wrapped in quotes in the Vercel UI.
+
+6. **Deploy**, then open the production URL.
+
+7. If you add or change any variable later: **Deployments → ⋮ on latest → Redeploy**. Next.js bakes `NEXT_PUBLIC_*` into the build; saving env vars alone does not update a deployment that already built without them.
 
 ## 3. Web project
 
@@ -74,6 +78,19 @@ In [Clerk Dashboard](https://dashboard.clerk.com) → your application:
 When the API is hosted, set `NEXT_PUBLIC_API_URL` on the web project to the public API base URL, redeploy web, and configure API CORS with `NEXT_PUBLIC_WEB_URL` and `NEXT_PUBLIC_LANDING_URL`.
 
 ## Troubleshooting
+
+### `Missing publishableKey` (runtime logs)
+
+Clerk is not seeing `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` on **job-engineer-landing** (or whichever landing project serves the URL in the log).
+
+1. Vercel → **job-engineer-landing** project (not the web project) → **Settings → Environment Variables**.
+2. Add or fix:
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` = your `pk_…` key from [Clerk API Keys](https://dashboard.clerk.com/last-active?path=api-keys)
+   - `CLERK_SECRET_KEY` = your `sk_…` key (same Clerk application)
+3. Enable for **Production** and **Preview**.
+4. **Redeploy** (required). A deploy that ran before these vars existed will keep failing until you redeploy.
+
+Common mistakes: vars only on the web project; typo (`CLERK_PUBLISHABLE_KEY` without `NEXT_PUBLIC_`); empty value; redeploy skipped after adding keys.
 
 ### `500` / `MIDDLEWARE_INVOCATION_FAILED`
 

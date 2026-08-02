@@ -1,10 +1,10 @@
 'use client';
 
-import { SignUpButton } from '@clerk/nextjs';
 import { AuthControls } from '@/components/auth-controls';
 import { LandingBackground } from '@/components/landing-background';
 import { ParallaxScroll } from '@/components/parallax-scroll';
 import { LandingCtaButton } from '@/components/landing-cta-button';
+import { webAppPaths } from '@/lib/web-app';
 import { LandingMarquee } from '@/components/landing-marquee';
 import { ConvergenceSection } from '@/components/convergence-section';
 import { CompareSection } from '@/components/compare-section';
@@ -20,11 +20,13 @@ import { FaqSection } from '@/components/faq-section';
 import { StoryScroll, StoryPanel } from '@/components/story-scroll';
 import { StoryProgressRail } from '@/components/story-progress-rail';
 import { LandingFooter } from '@/components/landing-footer';
+import { RedirectSignedInToWeb } from '@/components/redirect-signed-in-to-web';
 import { LandingMotionRoot } from '@/components/landing-motion-root';
 
 export default function LandingPage() {
   return (
     <LandingMotionRoot>
+    <RedirectSignedInToWeb />
     <div className="landing-page relative min-h-screen">
       <LandingBackground />
       <ParallaxScroll />
@@ -61,11 +63,20 @@ export default function LandingPage() {
                 connect — built for clarity, not chaos.
               </p>
               <div data-cinematic-reveal>
-                <SignUpButton mode="modal">
-                  <LandingCtaButton className="mt-8">Get Started — it&apos;s free</LandingCtaButton>
-                </SignUpButton>
+                <LandingCtaButton className="mt-8" href={webAppPaths.signUp}>
+                  Get Started — it&apos;s free
+                </LandingCtaButton>
                 <p className="mt-3 text-xs text-muted-foreground">
                   No credit card. Set up in under 5 minutes.
+                </p>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Already using JobOS?{' '}
+                  <a
+                    href={webAppPaths.dashboard}
+                    className="font-medium text-emerald-400 underline-offset-4 hover:underline"
+                  >
+                    Open your dashboard
+                  </a>
                 </p>
               </div>
               <LandingMarquee className="absolute bottom-4 left-0 right-0 sm:bottom-6" />

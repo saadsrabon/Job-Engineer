@@ -1,7 +1,7 @@
 'use client';
 
-import { SignUpButton } from '@clerk/nextjs';
 import { LandingCtaButton } from '@/components/landing-cta-button';
+import { webAppPaths } from '@/lib/web-app';
 import { LandingMarquee } from '@/components/landing-marquee';
 
 export function OfferSection({ embedded = false }: { embedded?: boolean }) {
@@ -21,9 +21,9 @@ export function OfferSection({ embedded = false }: { embedded?: boolean }) {
           No confetti. No noise. Just the outcome you were working toward — because the search
           finally had a system behind it.
         </p>
-        <SignUpButton mode="modal">
-          <LandingCtaButton className="mt-10">Start your search the right way</LandingCtaButton>
-        </SignUpButton>
+        <LandingCtaButton className="mt-10" href={webAppPaths.signUp}>
+          Start your search the right way
+        </LandingCtaButton>
         <LandingMarquee className="mt-10 opacity-70" />
       </div>
     </section>
