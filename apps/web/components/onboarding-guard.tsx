@@ -45,7 +45,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
           <ul className="mt-2 list-inside list-disc space-y-1">
             <li>Start the API: <code className="text-foreground">pnpm dev:api</code></li>
             <li>Start Docker: <code className="text-foreground">pnpm docker:up</code></li>
-            <li>API URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}</li>
+            <li>API URL: {process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? '/jobos-api' : 'http://localhost:3001')}</li>
           </ul>
         </div>
         <Button size="sm" onClick={() => refetch()}>

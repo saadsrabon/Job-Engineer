@@ -51,9 +51,10 @@ Vercel deploys from Git. Push this repo to GitHub if it is not there already.
    | `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | `/dashboard`                               |
    | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | `/onboarding`                              |
    | `NEXT_PUBLIC_LANDING_URL`             | Landing production URL from step 2         |
-   | `NEXT_PUBLIC_API_URL`                 | Placeholder until API is live (see below)  |
+   | `NEXT_PUBLIC_API_URL`                 | Optional — defaults to same-origin `/jobos-api` in production |
+   | `API_PROXY_TARGET`                    | `http://2.25.76.201:3011` (Vercel server-side proxy to VPS) |
 
-   For frontend-only testing, `NEXT_PUBLIC_API_URL` can stay unset or use a placeholder; dashboard API calls will fail until the API is deployed.
+   The web app proxies API calls through `/jobos-api` so HTTPS Vercel can reach the HTTP VPS backend. Do **not** set `NEXT_PUBLIC_API_URL` to `http://2.25.76.201:3011` (browsers block mixed content).
 
 5. Deploy and copy the production URL.
 

@@ -1,0 +1,15 @@
+# Optional: include from an existing nginx server block (do not replace other sites).
+# Replace YOUR_DOMAIN or use the server IP with a dedicated server_name.
+#
+# API public URL becomes: http://YOUR_DOMAIN/jobos-api
+# Set NEXT_PUBLIC_API_URL=https://YOUR_DOMAIN/jobos-api on Vercel web.
+
+location /jobos-api/ {
+    proxy_pass http://127.0.0.1:3011/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    client_max_body_size 20M;
+}

@@ -1,0 +1,40 @@
+# JobOS infra — localhost-only ports to avoid clashing with other server services.
+# Postgres 5433, Redis 6380 (not exposed publicly).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jobos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobos_prod_change_me}
+      POSTGRES_DB: jobos
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - jobos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jobos -d jobos']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: jobos-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '127.0.0.1:6380:6379'
+    volumes:
+      - jobos_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  jobos_postgres_data:
+  jobos_redis_data:
